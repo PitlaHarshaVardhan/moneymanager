@@ -1,13 +1,13 @@
-import './index.css'
+import "./index.css";
 
-const TransactionItem = props => {
-  const {transactionDetails, deleteTransaction} = props
-  console.log(transactionDetails)
-  const {transactionid, title, amount, type,date} = transactionDetails
+const TransactionItem = (props) => {
+  const { transactionDetails, deleteTransaction } = props;
+  // console.log(transactionDetails);
+  const { transactionid, title, amount, type, date } = transactionDetails;
 
   const onDeleteTransaction = () => {
-    deleteTransaction(transactionid)
-  }
+    deleteTransaction(transactionid);
+  };
 
   return (
     <li className="table-row">
@@ -30,7 +30,7 @@ const TransactionItem = props => {
         </button>
       </div>
     </li>
-  )
-}
+  );
+};
 
-export default TransactionItem
+export default TransactionItem;

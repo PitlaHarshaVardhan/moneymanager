@@ -9,7 +9,7 @@ const { v4 } = require("uuid");
 
 const app = express();
 const port = 3001;
-const currentDate = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD format
+const currentDate = new Date().toLocaleDateString("en-CA");
 
 // Enable CORS
 app.use(cors());
@@ -84,7 +84,7 @@ cron.schedule("59 23 28-31 * *", () => {
 // Generate PDF report for all transactions
 app.get("/generate-pdf", (req, res) => {
   const outputDir = path.resolve(__dirname, "reports");
-  const fileName = `${outputDir}/Transaction_Report_${
+  const fileName = `Transaction_Report_${
     new Date().toISOString().split("T")[0]
   }.pdf`; // Creating a dynamic filename based on the current date
 
@@ -96,6 +96,8 @@ app.get("/generate-pdf", (req, res) => {
     if (err) {
       return res.status(500).send("Failed to fetch transactions.");
     }
+
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
 
     // Create PDF document
     const pdfDoc = new PDFDocument();
@@ -190,6 +192,18 @@ app.get("/transaction", (req, res) => {
       res.status(500).json({ error: err.message });
       console.log(err.message);
     } else {
+      results.forEach((result, index) => {
+        console.log(result.date);
+        if (result.date != null) {
+          const date = new Date(result.date); // Convert to a Date object
+          date.setHours(date.getHours() + 5, date.getMinutes() + 30); // Add 5:30 for IST offset
+
+          // Format as YYYY-MM-DD
+          const formattedDate = date.toISOString().split("T")[0];
+          result.date = formattedDate;
+        }
+      });
+
       res.json(results);
     }
   });
@@ -198,10 +212,18 @@ app.get("/transaction", (req, res) => {
 // API to create a transaction
 app.post("/transaction", (req, res) => {
   const { transactionid, title, amount, type } = req.body;
+  console.log(currentDate);
+  const date = new Date(currentDate); // Convert to a Date object
+  date.setHours(date.getHours() + 5, date.getMinutes() + 30); // Add 5:30 for IST offset
+
+  // Format as YYYY-MM-DD
+  const formattedDate = date.toISOString().split("T")[0];
+
+  // console.log(formattedDate);
 
   db.query(
     "INSERT INTO transaction (transactionid, title, amount, type, date) VALUES (?, ?, ?, ?, ?)",
-    [transactionid, title, amount, type, currentDate],
+    [transactionid, title, amount, type, formattedDate],
     (err) => {
       if (err) {
         res.status(500).json({ error: err.message });
