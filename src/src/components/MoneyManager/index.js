@@ -1,10 +1,9 @@
 import { Component } from "react";
 import { v4 } from "uuid";
-import axios from "axios"; // Import axios for API calls
-
+import axios from "axios";
+import QrScanner from "qr-scanner";
 import TransactionItem from "../TransactionItem";
 import MoneyDetails from "../MoneyDetails";
-
 import "./index.css";
 
 const transactionTypeOptions = [
@@ -18,17 +17,33 @@ const transactionTypeOptions = [
   },
 ];
 
+QrScanner.WORKER_PATH =
+  process.env.PUBLIC_URL + "/qr-scanner/qr-scanner-worker.min.js";
+
 class MoneyManager extends Component {
   state = {
     transactionsList: [],
     titleInput: "",
     amountInput: "",
     optionId: transactionTypeOptions[0].optionId,
+    isScannerActive: false,
+    scannerData: null,
   };
 
-  // Fetch all transactions from the backend when the component mounts
   componentDidMount() {
     this.fetchTransactions();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.isScannerActive && !prevState.isScannerActive) {
+      this.initializeScanner();
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.qrScanner) {
+      this.qrScanner.destroy(); // Stop the QR scanner when the component is unmounted
+    }
   }
 
   fetchTransactions = () => {
@@ -43,31 +58,61 @@ class MoneyManager extends Component {
       });
   };
 
-  // Delete a transaction from the frontend and backend
+  // Initialize QR Scanner when it's activated
+  initializeScanner = () => {
+    const videoElem = document.getElementById("scanner-video");
+    if (videoElem) {
+      this.qrScanner = new QrScanner(
+        videoElem,
+        this.handleScan,
+        this.handleError
+      );
+      this.qrScanner.start();
+    } else {
+      console.error("QR Scanner: video element not found");
+    }
+  };
+
+  handleScan = (data) => {
+    if (data) {
+      this.setState({ scannerData: data });
+      alert("QR Code Scanned: " + data);
+      // Redirect to payment page with the receiver details
+      window.location.href = `/payment/${data}`;
+    }
+  };
+
+  handleError = (err) => {
+    console.error("QR Scanner Error: ", err);
+  };
+
+  toggleScanner = () => {
+    this.setState((prevState) => {
+      const newScannerState = !prevState.isScannerActive;
+      if (newScannerState) {
+        this.initializeScanner();
+      } else {
+        this.qrScanner.stop();
+      }
+      return { isScannerActive: newScannerState };
+    });
+  };
+
   deleteTransaction = (id) => {
     const { transactionsList } = this.state;
-    // console.log(id)
     axios
       .delete(`http://localhost:3001/transaction/${id}`)
       .then(() => {
-        // After successfully deleting from the backend, remove from frontend
         const updatedTransactionList = transactionsList.filter(
           (eachTransaction) => id !== eachTransaction.id
         );
-
-        this.setState(
-          {
-            transactionsList: updatedTransactionList,
-          },
-          this.fetchTransactions
-        );
+        this.setState({ transactionsList: updatedTransactionList });
       })
       .catch((error) => {
         console.error("There was an error deleting the transaction!", error);
       });
   };
 
-  // Add a transaction to the backend and frontend
   onAddTransaction = (event) => {
     event.preventDefault();
     const { titleInput, amountInput, optionId } = this.state;
@@ -82,20 +127,15 @@ class MoneyManager extends Component {
       type: displayText,
     };
 
-    // console.log(newTransaction)
-
     axios
       .post("http://localhost:3001/transaction", newTransaction)
-      .then((response) => {
-        // After successfully adding to the backend, update the frontend state
-
+      .then(() => {
         this.setState((prevState) => ({
           transactionsList: [...prevState.transactionsList, newTransaction],
           titleInput: "",
           amountInput: "",
           optionId: transactionTypeOptions[0].optionId,
         }));
-        // console.log(newTransaction)
       })
       .catch((error) => {
         console.error("There was an error adding the transaction!", error);
@@ -117,13 +157,11 @@ class MoneyManager extends Component {
   getExpenses = () => {
     const { transactionsList } = this.state;
     let expensesAmount = 0;
-
     transactionsList.forEach((eachTransaction) => {
       if (eachTransaction.type === transactionTypeOptions[1].displayText) {
         expensesAmount += eachTransaction.amount;
       }
     });
-
     return expensesAmount;
   };
 
@@ -135,7 +173,6 @@ class MoneyManager extends Component {
         incomeAmount += eachTransaction.amount;
       }
     });
-
     return incomeAmount;
   };
 
@@ -154,12 +191,17 @@ class MoneyManager extends Component {
     });
 
     balanceAmount = incomeAmount - expensesAmount;
-
     return balanceAmount;
   };
 
   render() {
-    const { titleInput, amountInput, optionId, transactionsList } = this.state;
+    const {
+      titleInput,
+      amountInput,
+      optionId,
+      transactionsList,
+      isScannerActive,
+    } = this.state;
     const balanceAmount = this.getBalance();
     const incomeAmount = this.getIncome();
     const expensesAmount = this.getExpenses();
@@ -181,6 +223,10 @@ class MoneyManager extends Component {
             }
           >
             Download Monthly Report
+          </button>
+
+          <button className="button" onClick={this.toggleScanner}>
+            {isScannerActive ? "Close Scanner" : "Open QR Scanner"}
           </button>
 
           <MoneyDetails
@@ -232,6 +278,14 @@ class MoneyManager extends Component {
                 Add
               </button>
             </form>
+
+            {/* QR Scanner */}
+            {isScannerActive && (
+              <div className="scanner-container">
+                <video id="scanner-video" className="scanner" />
+              </div>
+            )}
+
             <div className="history-transactions">
               <h1 className="transaction-header">History</h1>
               <div className="transactions-table-container">
