@@ -48,7 +48,7 @@ class MoneyManager extends Component {
 
   fetchTransactions = () => {
     axios
-      .get("http://localhost:3001/transaction")
+      .get("https://moneymanager-r7y8.onrender.com/transaction")
       .then((response) => {
         this.setState({ transactionsList: response.data });
         console.log(response.data);
@@ -101,7 +101,7 @@ class MoneyManager extends Component {
   deleteTransaction = (id) => {
     const { transactionsList } = this.state;
     axios
-      .delete(`http://localhost:3001/transaction/${id}`)
+      .delete(`https://moneymanager-r7y8.onrender.com/transaction/${id}`)
       .then(() => {
         const updatedTransactionList = transactionsList.filter(
           (eachTransaction) => id !== eachTransaction.id
@@ -128,7 +128,10 @@ class MoneyManager extends Component {
     };
 
     axios
-      .post("http://localhost:3001/transaction", newTransaction)
+      .post(
+        "https://moneymanager-r7y8.onrender.com/transaction",
+        newTransaction
+      )
       .then(() => {
         this.setState((prevState) => ({
           transactionsList: [...prevState.transactionsList, newTransaction],
@@ -219,7 +222,10 @@ class MoneyManager extends Component {
           <button
             className="button"
             onClick={() =>
-              window.open("http://localhost:3001/generate-pdf", "_blank")
+              window.open(
+                "https://moneymanager-r7y8.onrender.com/generate-pdf",
+                "_blank"
+              )
             }
           >
             Download Monthly Report
