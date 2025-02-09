@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "install:all": "npm install && cd src && npm install && cd ../server && npm install",
     "build": "react-scripts build",
-    "server": "npm start --prefix server",
-    "client": "npm start --prefix src",
+    "server": "cd server && npm start",
+    "client": "cd src && npm start",
     "frontend": "cd src && npm start",
     "backend": "cd server && npm start",
     "start": "concurrently \"npm run frontend\" \"npm run backend\""
@@ -14,10 +15,22 @@
     "axios": "^1.7.8",
     "concurrently": "^9.1.0",
     "date-fns": "^4.1.0",
-    "node-cron": "^3.0.3",
-    "pdfkit": "^0.15.1",
     "pitlaharshavardhan": "file:",
     "qr-scanner": "^1.4.2",
-    "react-scripts": "^5.0.1"
+    "react-dom": "^19.0.0",
+    "react-scripts": "^5.0.1",
+    "web-vitals": "^4.2.4"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
