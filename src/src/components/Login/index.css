@@ -1,0 +1,151 @@
+/* index.css */
+
+/* Global styles */
+/* * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background-color: #f4f4f4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+} */
+
+/* Container for the login form */
+.login-form-container3 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-website-logo-mobile-image3,
+.login-website-logo-desktop-image3 {
+  width: 100%;
+  max-width: 150px;
+  margin-bottom: 20px;
+}
+
+.login-image3 {
+  width: 100%;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.form-container3 {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-container3 {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.input-label3 {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.username-input-field3,
+.password-input-field3 {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  color: #333;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.username-input-field3:focus,
+.password-input-field3:focus {
+  border-color: #007bff;
+}
+
+.login-button3 {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-button3:hover {
+  background-color: #0056b3;
+}
+
+.error-message3 {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .login-form-container3 {
+    max-width: 350px;
+  }
+
+  .login-website-logo-mobile-image3 {
+    max-width: 120px;
+  }
+
+  .login-image3 {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .login-image3 {
+    max-width: 300px;
+  }
+
+  .login-form-container3 {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 600px;
+  }
+
+  .form-container3 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-left: 20px;
+  }
+
+  .input-container3 {
+    width: 80%;
+  }
+
+  .login-button3 {
+    width: auto;
+  }
+
+  .error-message3 {
+    text-align: left;
+  }
+}

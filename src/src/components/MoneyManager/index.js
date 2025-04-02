@@ -1,5 +1,7 @@
 import { Component } from "react";
-import { v4 } from "uuid";
+// import { useHistory } from "react-router-dom";
+// import { v4 } from "uuid";
+import Cookies from "js-cookie";
 import axios from "axios";
 import QrScanner from "qr-scanner";
 import TransactionItem from "../TransactionItem";
@@ -48,7 +50,7 @@ class MoneyManager extends Component {
 
   fetchTransactions = () => {
     axios
-      .get("http://localhost:3001/transaction")
+      .get("http://localhost:3001/transaction", { withCredentials: true })
       .then((response) => {
         this.setState({ transactionsList: response.data });
         console.log(response.data);
@@ -73,12 +75,10 @@ class MoneyManager extends Component {
     }
   };
 
-  handleScan = (data) => {
+  handleScan = (data, history) => {
     if (data) {
-      this.setState({ scannerData: data });
       alert("QR Code Scanned: " + data);
-      // Redirect to payment page with the receiver details
-      window.location.href = `/payment/${data}`;
+      history.push(`/payment/${data}`);
     }
   };
 
@@ -98,18 +98,55 @@ class MoneyManager extends Component {
     });
   };
 
-  deleteTransaction = (id) => {
+  deleteTransaction = (transactionid) => {
     const { transactionsList } = this.state;
     axios
-      .delete(`http://localhost:3001/transaction/${id}`)
+      .delete(`http://localhost:3001/transaction/${transactionid}`, {
+        withCredentials: true,
+      }) // Ensure credentials are included
       .then(() => {
         const updatedTransactionList = transactionsList.filter(
-          (eachTransaction) => id !== eachTransaction.id
+          (eachTransaction) => transactionid !== eachTransaction.transactionid
         );
         this.setState({ transactionsList: updatedTransactionList });
       })
       .catch((error) => {
-        console.error("There was an error deleting the transaction!", error);
+        console.error(
+          "Error deleting transaction:",
+          error.response?.data?.message || error.message
+        );
+      });
+  };
+
+  clearAllTransactions = () => {
+    axios
+      .delete("http://localhost:3001/transactions/clear", {
+        withCredentials: true,
+      })
+      .then(() => {
+        this.setState({ transactionsList: [] }); // Clear transactions in the state
+        console.log("All transactions cleared successfully");
+      })
+      .catch((error) => {
+        console.error(
+          "Error clearing transactions:",
+          error.response?.data?.message || error.message
+        );
+      });
+  };
+
+  updateTransaction = (transactionid, updatedTransaction) => {
+    axios
+      .put(
+        `http://localhost:3001/transaction/${transactionid}`,
+        updatedTransaction,
+        { withCredentials: true }
+      )
+      .then(() => {
+        this.fetchTransactions(); // Refresh transactions after updating
+      })
+      .catch((error) => {
+        console.error("Error updating transaction:", error);
       });
   };
 
@@ -120,22 +157,33 @@ class MoneyManager extends Component {
       (eachTransaction) => eachTransaction.optionId === optionId
     );
     const { displayText } = typeOption;
-    const newTransaction = {
-      transactionid: v4(),
-      title: titleInput,
-      amount: parseInt(amountInput),
-      type: displayText,
-    };
+
+    const userId = JSON.parse(localStorage.getItem("user")).userId;
+    // Retrieve userId
+
+    if (!userId) {
+      console.error("User ID not found! Ensure the user is logged in.");
+      return;
+    }
 
     axios
-      .post("http://localhost:3001/transaction", newTransaction)
+      .post(
+        "http://localhost:3001/transaction",
+        {
+          title: titleInput,
+          amount: parseInt(amountInput),
+          type: displayText,
+          userId: userId,
+        },
+        { withCredentials: true }
+      )
       .then(() => {
-        this.setState((prevState) => ({
-          transactionsList: [...prevState.transactionsList, newTransaction],
+        this.fetchTransactions(); // Refresh transactions after adding
+        this.setState({
           titleInput: "",
           amountInput: "",
           optionId: transactionTypeOptions[0].optionId,
-        }));
+        });
       })
       .catch((error) => {
         console.error("There was an error adding the transaction!", error);
@@ -194,6 +242,18 @@ class MoneyManager extends Component {
     return balanceAmount;
   };
 
+  logout = () => {
+    axios
+      .post("http://localhost:3001/logout", {}, { withCredentials: true }) // Ensure credentials are included
+      .then(() => {
+        Cookies.remove("jwt_token"); // Remove token from client-side
+        window.location.href = "/login"; // Redirect to login page
+      })
+      .catch((error) => {
+        console.error("Logout failed", error);
+      });
+  };
+
   render() {
     const {
       titleInput,
@@ -202,14 +262,15 @@ class MoneyManager extends Component {
       transactionsList,
       isScannerActive,
     } = this.state;
+
     const balanceAmount = this.getBalance();
     const incomeAmount = this.getIncome();
     const expensesAmount = this.getExpenses();
 
     return (
-      <div className="app-container">
-        <div className="responsive-container">
-          <div className="header-container">
+      <div className="app-container1">
+        <div className="responsive-container1">
+          <div className="header-container1">
             <h1 className="heading">Hi, BACHELORS</h1>
             <p className="header-content">
               Welcome back to your
@@ -224,9 +285,15 @@ class MoneyManager extends Component {
           >
             Download Monthly Report
           </button>
+          <button className="button" onClick={this.clearAllTransactions}>
+            Clear All Transactions
+          </button>
 
           <button className="button" onClick={this.toggleScanner}>
             {isScannerActive ? "Close Scanner" : "Open QR Scanner"}
+          </button>
+          <button className="button logout-button" onClick={this.logout}>
+            Logout
           </button>
 
           <MoneyDetails
@@ -301,6 +368,7 @@ class MoneyManager extends Component {
                       key={eachTransaction.transactionid}
                       transactionDetails={eachTransaction}
                       deleteTransaction={this.deleteTransaction}
+                      updateTransaction={this.updateTransaction} // ✅ Pass it here
                     />
                   ))}
                 </ul>
