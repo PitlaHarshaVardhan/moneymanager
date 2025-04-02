@@ -1,6 +1,10 @@
 import { Component } from "react";
 // import { useHistory } from "react-router-dom";
 // import { v4 } from "uuid";
+import { IoIosQrScanner } from "react-icons/io";
+import { MdDeleteForever } from "react-icons/md";
+import { IoIosLogOut } from "react-icons/io";
+import { FaCloudDownloadAlt } from "react-icons/fa";
 import Cookies from "js-cookie";
 import axios from "axios";
 import QrScanner from "qr-scanner";
@@ -277,24 +281,26 @@ class MoneyManager extends Component {
               <span className="money-manager-text"> Money Manager</span>
             </p>
           </div>
-          <button
-            className="button"
+          <FaCloudDownloadAlt
+            className="button5"
             onClick={() =>
               window.open("http://localhost:3001/generate-pdf", "_blank")
             }
-          >
-            Download Monthly Report
-          </button>
-          <button className="button" onClick={this.clearAllTransactions}>
+          />
+          {/* <button>Download Monthly Report</button> */}
+          <MdDeleteForever
+            className="button5"
+            onClick={this.clearAllTransactions}
+          />
+          {/* <button >
             Clear All Transactions
-          </button>
-
-          <button className="button" onClick={this.toggleScanner}>
+          </button> */}
+          <IoIosQrScanner className="button5" onClick={this.toggleScanner} />
+          {/* <button>
             {isScannerActive ? "Close Scanner" : "Open QR Scanner"}
-          </button>
-          <button className="button logout-button" onClick={this.logout}>
-            Logout
-          </button>
+          </button> */}
+          <IoIosLogOut className="button5" onClick={this.logout} />
+          {/* <button>Logout</button> */}
 
           <MoneyDetails
             balanceAmount={balanceAmount}
@@ -341,7 +347,7 @@ class MoneyManager extends Component {
                   </option>
                 ))}
               </select>
-              <button type="submit" className="button">
+              <button type="submit" className="buttons">
                 Add
               </button>
             </form>
