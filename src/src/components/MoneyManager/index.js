@@ -102,15 +102,15 @@ class MoneyManager extends Component {
     });
   };
 
-  deleteTransaction = (transactionid) => {
+  deleteTransaction = (transactionId) => {
     const { transactionsList } = this.state;
     axios
-      .delete(`http://localhost:3001/transaction/${transactionid}`, {
+      .delete(`http://localhost:3001/transaction/${transactionId}`, {
         withCredentials: true,
       }) // Ensure credentials are included
       .then(() => {
         const updatedTransactionList = transactionsList.filter(
-          (eachTransaction) => transactionid !== eachTransaction.transactionid
+          (eachTransaction) => transactionId !== eachTransaction.transactionId
         );
         this.setState({ transactionsList: updatedTransactionList });
       })
@@ -139,10 +139,11 @@ class MoneyManager extends Component {
       });
   };
 
-  updateTransaction = (transactionid, updatedTransaction) => {
+  updateTransaction = (transactionId, updatedTransaction) => {
+    console.log(transactionId);
     axios
       .put(
-        `http://localhost:3001/transaction/${transactionid}`,
+        `http://localhost:3001/transaction/${transactionId}`,
         updatedTransaction,
         { withCredentials: true }
       )
@@ -272,7 +273,7 @@ class MoneyManager extends Component {
     const expensesAmount = this.getExpenses();
 
     return (
-      <div className="app-container1">
+      <div className="app-containers">
         <div className="responsive-container1">
           <div className="header-container1">
             <h1 className="heading">Hi, BACHELORS</h1>
@@ -371,7 +372,7 @@ class MoneyManager extends Component {
                   </li>
                   {transactionsList.map((eachTransaction) => (
                     <TransactionItem
-                      key={eachTransaction.transactionid}
+                      key={eachTransaction.transactionId}
                       transactionDetails={eachTransaction}
                       deleteTransaction={this.deleteTransaction}
                       updateTransaction={this.updateTransaction} // ✅ Pass it here

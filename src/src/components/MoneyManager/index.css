@@ -1,23 +1,23 @@
-.app-container {
+.app-containers {
   display: flex;
   justify-content: center;
   align-items: center;
-
   min-height: 100vh;
+  padding: 20px;
 }
 
-.responsive-container {
+.responsive-container1 {
   width: 80%;
   max-width: 550px;
 }
 
 @media screen and (min-width: 768px) {
-  .responsive-container {
+  .responsive-container1 {
     max-width: 1140px;
   }
 }
 
-.header-container {
+.header-container1 {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -31,7 +31,7 @@
 }
 
 @media screen and (min-width: 768px) {
-  .header-container {
+  .header-container1 {
     align-items: flex-start;
     padding: 48px;
   }

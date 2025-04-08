@@ -382,7 +382,8 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const { title, amount, type } = req.body;
   const userId = req.user.userId;
-
+  // console.log(id);
+  // console.log(userId);
   if (!title || !amount || !type) {
     console.log("Validation failed: Missing fields");
     return res.status(400).json({ error: "All fields are required" });

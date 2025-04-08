@@ -6,14 +6,15 @@ const TransactionItem = ({
   deleteTransaction,
   updateTransaction,
 }) => {
-  const { transactionid, title, amount, type, date } = transactionDetails;
+  const { transactionId, title, amount, type, date } = transactionDetails;
+  console.log(transactionId);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedAmount, setEditedAmount] = useState(amount);
   const [editedType, setEditedType] = useState(type);
 
   const onDeleteTransaction = () => {
-    deleteTransaction(transactionid);
+    deleteTransaction(transactionId);
   };
 
   const onEditTransaction = () => {
@@ -21,7 +22,7 @@ const TransactionItem = ({
   };
 
   const onSaveTransaction = () => {
-    updateTransaction(transactionid, {
+    updateTransaction(transactionId, {
       title: editedTitle,
       amount: editedAmount,
       type: editedType,
