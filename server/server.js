@@ -1,5 +1,5 @@
 const express = require("express");
-const mysql = require("mysql2");
+const { MongoClient } = require("mongodb");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -9,7 +9,6 @@ const cron = require("node-cron");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 
-const path = require("path");
 const app = express();
 const port = 3001;
 
@@ -18,30 +17,32 @@ app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// MySQL Connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "94409912@Harsha",
-  database: "mydb",
-});
+// MongoDB Atlas Connection
+const uri =
+  "mongodb+srv://sriramkomma2443:Lowda12345@mydb-cluster.46hwdk7.mongodb.net/?retryWrites=true&w=majority&appName=mydb-cluster"; // Replace with your Atlas URI
+const client = new MongoClient(uri);
 
-db.connect((err) => {
-  if (err) console.error("Database connection error:", err);
-  else console.log("Connected to MySQL database.");
-});
+let db;
+async function connectDB() {
+  try {
+    await client.connect();
+    db = client.db("mydb");
+    console.log("Connected to MongoDB Atlas.");
+  } catch (err) {
+    console.error("Database connection error:", err);
+    process.exit(1);
+  }
+}
+connectDB();
 
 // Authentication Middleware
 const verifyToken = (req, res, next) => {
-  console.log("Checking JWT token:", req.cookies); // Debugging
   const token = req.cookies.jwt_token;
-  if (!token)
-    return res.status(401).json({ message: "Unauthorized, No Token" });
+  if (!token) return res.status(401).json({ error: "Unauthorized, No Token" });
 
   jwt.verify(token, "first_project_fullstack", (err, decoded) => {
     if (err)
-      return res.status(401).json({ message: "Unauthorized, Invalid Token" });
-
+      return res.status(401).json({ error: "Unauthorized, Invalid Token" });
     req.user = decoded;
     next();
   });
@@ -49,320 +50,363 @@ const verifyToken = (req, res, next) => {
 
 // **User Registration**
 app.post("/register", async (req, res) => {
+  console.log("Register request received:", req.body);
   const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    console.log("Validation failed: Missing fields");
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    console.log("Validation failed: Invalid email");
+    return res.status(400).json({ error: "Please enter a valid email with @" });
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (results.length > 0)
+  try {
+    console.log("Connecting to users collection...");
+    const usersCollection = db.collection("users");
+    const existingUser = await usersCollection.findOne({ email });
+    if (existingUser) {
+      console.log("User already exists:", email);
       return res.status(400).json({ error: "User already exists" });
+    }
 
-    db.query(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-      [username, email, hashedPassword],
-      (err) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ message: "User registered successfully" });
-      }
-    );
-  });
+    console.log("Inserting new user:", { username, email });
+    await usersCollection.insertOne({
+      username,
+      email,
+      password: hashedPassword,
+    });
+    console.log("User registered successfully");
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (err) {
+    console.error("Registration error:", err);
+    res.status(500).json({ error: `Registration failed: ${err.message}` });
+  }
 });
 
 // **User Login**
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
+  console.log("Login request received:", req.body);
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+    console.log("Validation failed: Missing fields");
+    return res.status(400).json({ error: "Email and password are required" });
   }
 
-  db.query(
-    "SELECT * FROM users WHERE email = ?",
-    [email],
-    async (err, results) => {
-      if (err) {
-        return res.status(500).json({ message: "Server error" });
-      }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    console.log("Validation failed: Invalid email");
+    return res.status(400).json({ error: "Please enter a valid email with @" });
+  }
 
-      if (results.length === 0) {
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
+  try {
+    console.log("Connecting to users collection...");
+    const usersCollection = db.collection("users");
+    const user = await usersCollection.findOne({ email });
 
-      const user = results[0];
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
-
-      const token = jwt.sign(
-        { userId: user.id, email: user.email },
-        "first_project_fullstack",
-        { expiresIn: "1h" }
-      );
-
-      res.cookie("jwt_token", token, { httpOnly: true, secure: false });
-      res.json({ message: "Login successful", token, userId: user.id });
+    if (!user) {
+      console.log("User not found:", email);
+      return res.status(401).json({ error: "Invalid email or password" });
     }
-  );
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      console.log("Invalid password for:", email);
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      "first_project_fullstack",
+      { expiresIn: "1h" }
+    );
+
+    res.cookie("jwt_token", token, { httpOnly: true, secure: false });
+    console.log("Login successful for:", email);
+    res.json({ message: "Login successful", token, userId: user._id });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
+
 // **User Logout**
 app.post("/logout", (req, res) => {
   res.cookie("jwt_token", "", {
     httpOnly: true,
-    secure: false, // Set to true in production with HTTPS
-    expires: new Date(0), // Expire the cookie immediately
+    secure: false,
+    expires: new Date(0),
   });
   res.json({ message: "Logged out successfully" });
 });
 
-// **Get Transactions for Logged-in User**
-app.get("/transaction", verifyToken, (req, res) => {
+// **Get Transactions**
+app.get("/transaction", verifyToken, async (req, res) => {
   const userId = req.user.userId;
 
-  db.query(
-    "SELECT * FROM transaction WHERE userId = ?",
-    [userId],
-    (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
-
-      res.json(results);
-    }
-  );
+  try {
+    console.log("Fetching transactions for user:", userId);
+    const transactionsCollection = db.collection("transaction");
+    const transactions = await transactionsCollection
+      .find({ userId })
+      .toArray();
+    res.json(transactions);
+  } catch (err) {
+    console.error("Error fetching transactions:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// **Create a New Transaction**
-app.post("/transaction", (req, res) => {
+// **Create Transaction**
+app.post("/transaction", async (req, res) => {
+  console.log("Transaction request received:", req.body);
   const { title, amount, type, userId } = req.body;
-  if (!userId) {
-    return res.status(400).json({ error: "User ID is required" });
+
+  if (!title || !amount || !type || !userId) {
+    console.log("Validation failed: Missing fields");
+    return res.status(400).json({ error: "All fields are required" });
   }
 
-  const transactionId = uuidv4(); // Generate unique transaction ID
-  const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+  const transactionId = uuidv4();
+  const currentDate = new Date().toISOString().split("T")[0];
 
-  const sql =
-    "INSERT INTO transaction (transactionid, title, amount, type, date, userId) VALUES (?, ?, ?, ?, ?, ?)";
-  db.query(
-    sql,
-    [transactionId, title, amount, type, currentDate, userId],
-    (err, result) => {
-      if (err) {
-        console.error("Error inserting transaction:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-      res.json({ message: "Transaction added successfully!" });
-    }
-  );
+  try {
+    console.log("Inserting transaction for user:", userId);
+    const transactionsCollection = db.collection("transaction");
+    await transactionsCollection.insertOne({
+      transactionId,
+      title,
+      amount,
+      type,
+      date: currentDate,
+      userId,
+    });
+    console.log("Transaction inserted successfully");
+    res.json({ message: "Transaction added successfully" });
+  } catch (err) {
+    console.error("Error inserting transaction:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
-// **Delete a Transaction**
-app.delete("/transaction/:id", verifyToken, (req, res) => {
+// **Delete Transaction**
+app.delete("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
-  const userId = req.user.userId; // Ensure userId is extracted correctly
+  const userId = req.user.userId;
 
   if (!id) {
-    return res.status(400).json({ message: "Transaction ID is required" });
+    console.log("Validation failed: Missing transaction ID");
+    return res.status(400).json({ error: "Transaction ID is required" });
   }
 
-  db.query(
-    "DELETE FROM transaction WHERE transactionid = ? AND userId = ?",
-    [id, userId],
-    (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
+  try {
+    console.log("Deleting transaction:", id, "for user:", userId);
+    const transactionsCollection = db.collection("transaction");
+    const result = await transactionsCollection.deleteOne({
+      transactionId: id,
+      userId,
+    });
 
-      if (result.affectedRows === 0) {
-        return res
-          .status(404)
-          .json({ message: "Transaction not found or unauthorized" });
-      }
-
-      res.status(200).json({ message: `Transaction with ID ${id} deleted` });
+    if (result.deletedCount === 0) {
+      console.log("Transaction not found or unauthorized:", id);
+      return res
+        .status(404)
+        .json({ error: "Transaction not found or unauthorized" });
     }
-  );
+
+    console.log("Transaction deleted successfully:", id);
+    res.status(200).json({ message: `Transaction with ID ${id} deleted` });
+  } catch (err) {
+    console.error("Error deleting transaction:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// **Clear All Transactions for Logged-in User**
-app.delete("/transactions/clear", verifyToken, (req, res) => {
+// **Clear Transactions**
+app.delete("/transactions/clear", verifyToken, async (req, res) => {
   const userId = req.user.userId;
 
-  db.query(
-    "DELETE FROM transaction WHERE userId = ?",
-    [userId],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
+  try {
+    console.log("Clearing transactions for user:", userId);
+    const transactionsCollection = db.collection("transaction");
+    const result = await transactionsCollection.deleteMany({ userId });
 
-      if (result.affectedRows === 0) {
-        return res
-          .status(404)
-          .json({ message: "No transactions found to delete" });
-      }
-
-      res
-        .status(200)
-        .json({ message: "All transactions cleared successfully" });
+    if (result.deletedCount === 0) {
+      console.log("No transactions found to delete for user:", userId);
+      return res.status(404).json({ error: "No transactions found to delete" });
     }
-  );
+
+    console.log("All transactions cleared for user:", userId);
+    res.status(200).json({ message: "All transactions cleared successfully" });
+  } catch (err) {
+    console.error("Error clearing transactions:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// **Cron Job: Month-End Balance Carry-Over**
-cron.schedule("59 23 28-31 * *", () => {
+// **Cron Job: Month-End Balance**
+cron.schedule("59 23 28-31 * *", async () => {
   console.log("Cron job running at month's end...");
 
   const currentMonth = new Date().getMonth() + 1;
   const lastDay = new Date(new Date().getFullYear(), currentMonth, 0).getDate();
 
   if (new Date().getDate() === lastDay) {
-    db.query("SELECT id FROM users", (err, users) => {
-      if (err) return console.error("Error fetching users:", err.message);
+    try {
+      console.log("Fetching all users for cron job...");
+      const usersCollection = db.collection("users");
+      const transactionsCollection = db.collection("transaction");
 
-      users.forEach((user) => {
-        const userId = user.id;
-        db.query(
-          'SELECT SUM(amount) AS remaining FROM transaction WHERE type="Income" AND userId = ?',
-          [userId],
-          (err, result) => {
-            if (err)
-              return console.error("Error fetching income:", err.message);
+      const users = await usersCollection.find().toArray();
+      for (const user of users) {
+        const userId = user._id;
 
-            const remainingIncome = result[0]?.remaining || 0;
+        console.log("Calculating income for user:", userId);
+        const income = await transactionsCollection
+          .aggregate([
+            { $match: { userId, type: "Income" } },
+            { $group: { _id: null, total: { $sum: "$amount" } } },
+          ])
+          .toArray();
 
-            db.query(
-              "INSERT INTO transaction (transactionid, title, amount, type, date, userId) VALUES (?, ?, ?, ?, ?, ?)",
-              [
-                uuidv4(),
-                "Previous Month Balance",
-                remainingIncome,
-                "Income",
-                new Date().toISOString().split("T")[0],
-                userId,
-              ],
-              (insertErr) => {
-                if (insertErr)
-                  return console.error(
-                    "Error inserting new balance:",
-                    insertErr.message
-                  );
+        const remainingIncome = income[0]?.total || 0;
 
-                db.query(
-                  'DELETE FROM transaction WHERE type="Expenses" AND userId = ?',
-                  [userId],
-                  (deleteErr) => {
-                    if (deleteErr)
-                      return console.error(
-                        "Error resetting expenses:",
-                        deleteErr.message
-                      );
-                    console.log(
-                      `Monthly reset completed successfully for user ${userId}`
-                    );
-                  }
-                );
-              }
-            );
-          }
-        );
-      });
-    });
+        console.log("Inserting previous month balance for user:", userId);
+        await transactionsCollection.insertOne({
+          transactionId: uuidv4(),
+          title: "Previous Month Balance",
+          amount: remainingIncome,
+          type: "Income",
+          date: new Date().toISOString().split("T")[0],
+          userId,
+        });
+
+        console.log("Deleting expenses for user:", userId);
+        await transactionsCollection.deleteMany({
+          userId,
+          type: "Expenses",
+        });
+
+        console.log(`Monthly reset completed successfully for user ${userId}`);
+      }
+    } catch (err) {
+      console.error("Cron job error:", err);
+    }
   }
 });
 
 // **Generate PDF Report**
-app.get("/generate-pdf", verifyToken, (req, res) => {
-  const userId = req.user.userId; // Get userId from JWT token
+app.get("/generate-pdf", verifyToken, async (req, res) => {
+  const userId = req.user.userId;
   const fileName = `Transaction_Report_${
     new Date().toISOString().split("T")[0]
   }.pdf`;
 
-  db.query(
-    "SELECT * FROM transaction WHERE userId = ?",
-    [userId],
-    (err, results) => {
-      if (err) return res.status(500).send("Failed to fetch transactions.");
+  try {
+    console.log("Generating PDF for user:", userId);
+    const transactionsCollection = db.collection("transaction");
+    const transactions = await transactionsCollection
+      .find({ userId })
+      .toArray();
 
-      res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
-      res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+    res.setHeader("Content-Type", "application/pdf");
 
-      const pdfDoc = new PDFDocument({ margin: 30, size: "A4" });
-      pdfDoc.pipe(fs.createWriteStream(fileName));
-      pdfDoc.pipe(res);
+    const pdfDoc = new PDFDocument({ margin: 30, size: "A4" });
+    pdfDoc.pipe(fs.createWriteStream(fileName));
+    pdfDoc.pipe(res);
 
-      // Title
+    pdfDoc
+      .fontSize(18)
+      .text("Your Transactions Report", { align: "center", underline: true })
+      .moveDown(2);
+
+    const headers = ["Date", "Title", "Amount (Rp)", "Type"];
+    const columnWidths = [150, 150, 150, 100];
+    let yPosition = pdfDoc.y;
+
+    headers.forEach((header, i) => {
       pdfDoc
-        .fontSize(18)
-        .text("Your Transactions Report", { align: "center", underline: true })
-        .moveDown(2);
+        .font("Helvetica-Bold")
+        .fontSize(10)
+        .text(
+          header,
+          50 + columnWidths.slice(0, i).reduce((a, b) => a + b, 0),
+          yPosition
+        );
+    });
 
-      // Table Header
-      const headers = ["Date", "Title", "Amount (Rp)", "Type"];
-      const columnWidths = [150, 150, 150, 100]; // Widths for each column
-      let yPosition = pdfDoc.y;
+    pdfDoc.moveDown(0.5);
+    yPosition = pdfDoc.y;
+    pdfDoc.moveTo(50, yPosition).lineTo(550, yPosition).stroke();
+    pdfDoc.moveDown(0.5);
 
-      headers.forEach((header, i) => {
+    transactions.forEach((transaction) => {
+      yPosition = pdfDoc.y;
+      const rowData = [
+        new Date(transaction.date).toLocaleDateString(),
+        transaction.title,
+        transaction.amount,
+        transaction.type,
+      ];
+
+      rowData.forEach((data, i) => {
         pdfDoc
-          .font("Helvetica-Bold")
+          .font("Helvetica")
           .fontSize(10)
           .text(
-            header,
+            String(data),
             50 + columnWidths.slice(0, i).reduce((a, b) => a + b, 0),
             yPosition
           );
       });
-
       pdfDoc.moveDown(0.5);
-      yPosition = pdfDoc.y;
+    });
 
-      // Draw a line under the header
-      pdfDoc.moveTo(50, yPosition).lineTo(550, yPosition).stroke();
-      pdfDoc.moveDown(0.5);
-
-      // Table Rows
-      results.forEach((transaction) => {
-        yPosition = pdfDoc.y;
-        const rowData = [
-          new Date(transaction.date).toLocaleDateString(),
-          transaction.title,
-          transaction.amount,
-          transaction.type,
-        ];
-
-        rowData.forEach((data, i) => {
-          pdfDoc
-            .font("Helvetica")
-            .fontSize(10)
-            .text(
-              String(data),
-              50 + columnWidths.slice(0, i).reduce((a, b) => a + b, 0),
-              yPosition
-            );
-        });
-
-        pdfDoc.moveDown(0.5);
-      });
-
-      pdfDoc.end();
-    }
-  );
+    pdfDoc.end();
+    console.log("PDF generated successfully for user:", userId);
+  } catch (err) {
+    console.error("Error generating PDF:", err);
+    res.status(500).json({ error: "Failed to fetch transactions" });
+  }
 });
 
-app.put("/transaction/:id", verifyToken, (req, res) => {
+// **Update Transaction**
+app.put("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const { title, amount, type } = req.body;
   const userId = req.user.userId;
 
-  db.query(
-    "UPDATE transaction SET title = ?, amount = ?, type = ? WHERE transactionid = ? AND userId = ?",
-    [title, amount, type, id, userId],
-    (err, result) => {
-      if (err)
-        return res.status(500).json({ message: "Error updating transaction." });
-      if (result.affectedRows === 0)
-        return res.status(404).json({ message: "Transaction not found." });
-      res.json({ message: "Transaction updated successfully." });
+  if (!title || !amount || !type) {
+    console.log("Validation failed: Missing fields");
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    console.log("Updating transaction:", id, "for user:", userId);
+    const transactionsCollection = db.collection("transaction");
+    const result = await transactionsCollection.updateOne(
+      { transactionId: id, userId },
+      { $set: { title, amount, type } }
+    );
+
+    if (result.matchedCount === 0) {
+      console.log("Transaction not found:", id);
+      return res.status(404).json({ error: "Transaction not found" });
     }
-  );
+
+    console.log("Transaction updated successfully:", id);
+    res.json({ message: "Transaction updated successfully" });
+  } catch (err) {
+    console.error("Error updating transaction:", err);
+    res.status(500).json({ error: "Error updating transaction" });
+  }
 });
 
 // **Start Server**

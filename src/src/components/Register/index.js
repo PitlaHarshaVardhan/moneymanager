@@ -31,15 +31,26 @@ class Register extends Component {
   };
 
   onSubmitFailure = (errorMsg) => {
-    console.log(errorMsg);
     this.setState({ showSubmitError: true, errorMsg });
   };
 
   submitForm = async (event) => {
     event.preventDefault();
     const { username, email, password } = this.state;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      this.onSubmitFailure("Please enter a valid email with @");
+      return;
+    }
+
+    if (!username || !password) {
+      this.onSubmitFailure("All fields are required");
+      return;
+    }
+
     const userDetails = { username, email, password };
-    const url = "http://localhost:3001/register"; // Ensure this matches the backend route
+    const url = "http://localhost:3001/register";
     const options = {
       method: "POST",
       headers: {
@@ -51,16 +62,15 @@ class Register extends Component {
     try {
       const response = await fetch(url, options);
       const data = await response.json();
+      console.log("Register response:", data); // Debug log
       if (response.ok) {
-        this.onSubmitSuccess(); // Redirect to login if successful
+        this.onSubmitSuccess();
       } else {
-        this.onSubmitFailure(
-          data.error_msg || "Registration failed. Try again."
-        );
+        this.onSubmitFailure(data.error || "Registration failed. Try again.");
       }
     } catch (error) {
       console.error("Error during registration:", error);
-      this.onSubmitFailure("An unexpected error occurred. Please try again.");
+      this.onSubmitFailure("Network error. Please try again.");
     }
   };
 
@@ -77,6 +87,7 @@ class Register extends Component {
           className="password-input-field4"
           value={password}
           onChange={this.onChangePassword}
+          required
         />
       </>
     );
@@ -95,6 +106,7 @@ class Register extends Component {
           className="email-input-field4"
           value={email}
           onChange={this.onChangeEmail}
+          required
         />
       </>
     );
@@ -113,6 +125,7 @@ class Register extends Component {
           className="username-input-field4"
           value={username}
           onChange={this.onChangeUsername}
+          required
         />
       </>
     );

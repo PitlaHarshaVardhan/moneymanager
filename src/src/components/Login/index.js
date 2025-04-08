@@ -23,26 +23,35 @@ class Login extends Component {
   onSubmitSuccess = (data) => {
     const { history } = this.props;
 
-    // Save JWT token in cookies
     Cookies.set("jwt_token", data.token, {
       expires: 30,
       path: "/",
     });
 
-    // Store user ID in localStorage for later use
     localStorage.setItem("user", JSON.stringify({ userId: data.userId }));
 
     history.replace("/");
   };
 
   onSubmitFailure = (errorMsg) => {
-    console.log(errorMsg);
     this.setState({ showSubmitError: true, errorMsg });
   };
 
   submitForm = async (event) => {
     event.preventDefault();
     const { email, password } = this.state;
+
+    if (!email || !password) {
+      this.onSubmitFailure("Email and password are required");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      this.onSubmitFailure("Please enter a valid email with @");
+      return;
+    }
+
     const userDetails = { email, password };
     const url = "http://localhost:3001/login";
     const options = {
@@ -52,17 +61,19 @@ class Login extends Component {
       },
       body: JSON.stringify(userDetails),
     };
-    const response = await fetch(url, options);
-    const data = await response.json();
-    console.log(data);
-    if (response.ok) {
-      this.onSubmitSuccess(data);
-    } else {
-      const errorMsg =
-        data.message === "Invalid email or password"
-          ? "Invalid email or password"
-          : "Something went wrong!";
-      this.onSubmitFailure(errorMsg);
+
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+      console.log("Login response:", data);
+      if (response.ok) {
+        this.onSubmitSuccess(data);
+      } else {
+        this.onSubmitFailure(data.error || "Something went wrong!");
+      }
+    } catch (error) {
+      console.error("Network error during login:", error);
+      this.onSubmitFailure("Network error. Please try again.");
     }
   };
 
@@ -79,6 +90,7 @@ class Login extends Component {
           className="password-input-field3"
           value={password}
           onChange={this.onChangePassword}
+          required
         />
       </>
     );
@@ -94,9 +106,10 @@ class Login extends Component {
         <input
           type="email"
           id="email"
-          className="password-input-field3"
+          className="email-input-field3"
           value={email}
           onChange={this.onChangeEmail}
+          required
         />
       </>
     );
