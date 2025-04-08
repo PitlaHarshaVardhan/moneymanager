@@ -1,6 +1,8 @@
 .app-container {
   display: flex;
   justify-content: center;
+  align-items: center;
+
   min-height: 100vh;
 }
 
@@ -141,11 +143,27 @@
   min-width: 157px;
 }
 
-.button {
+.buttons {
   background-color: #0b69ff;
   color: #ffffff;
   font-family: "Roboto";
   font-size: 14px;
+  font-weight: 600;
+  min-width: 25px;
+  border-radius: 6px;
+  border: none;
+  padding-left: 24px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-right: 24px;
+  outline: none;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.button5 {
+  color: #000000;
+  font-family: "Roboto";
+  font-size: 34px;
   font-weight: 600;
   min-width: 25px;
   border-radius: 6px;
