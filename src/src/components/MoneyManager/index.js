@@ -141,6 +141,7 @@ class MoneyManager extends Component {
     });
   };
 
+<<<<<<< HEAD
   toggleNightMode = () => {
     this.setState((prevState) => ({ isNightMode: !prevState.isNightMode }));
   };
@@ -157,6 +158,19 @@ class MoneyManager extends Component {
             (t) => t.transactionId !== transactionId
           ),
         }));
+=======
+  deleteTransaction = (transactionId) => {
+    const { transactionsList } = this.state;
+    axios
+      .delete(`http://localhost:3001/transaction/${transactionId}`, {
+        withCredentials: true,
+      }) // Ensure credentials are included
+      .then(() => {
+        const updatedTransactionList = transactionsList.filter(
+          (eachTransaction) => transactionId !== eachTransaction.transactionId
+        );
+        this.setState({ transactionsList: updatedTransactionList });
+>>>>>>> 0e153cf8619f2b3a5d2e1fe39220d58860acf8b3
       })
       .catch((error) => {
         console.error(
@@ -176,12 +190,16 @@ class MoneyManager extends Component {
   };
 
   updateTransaction = (transactionId, updatedTransaction) => {
+<<<<<<< HEAD
     console.log(
       "Updating transaction with ID:",
       transactionId,
       "Data:",
       updatedTransaction
     );
+=======
+    console.log(transactionId);
+>>>>>>> 0e153cf8619f2b3a5d2e1fe39220d58860acf8b3
     axios
       .put(
         `http://localhost:3001/transaction/${transactionId}`,
@@ -279,6 +297,7 @@ class MoneyManager extends Component {
     const expensesAmount = this.getExpenses();
 
     return (
+<<<<<<< HEAD
       <div
         className={`money-manager-container ${
           isNightMode ? "night-mode" : ""
@@ -336,6 +355,15 @@ class MoneyManager extends Component {
             <h2 className="greeting">Hi, Bachelors!</h2>
             <p className="welcome-subtext">
               Welcome back to your financial hub
+=======
+      <div className="app-containers">
+        <div className="responsive-container1">
+          <div className="header-container1">
+            <h1 className="heading">Hi, BACHELORS</h1>
+            <p className="header-content">
+              Welcome back to your
+              <span className="money-manager-text"> Money Manager</span>
+>>>>>>> 0e153cf8619f2b3a5d2e1fe39220d58860acf8b3
             </p>
           </div>
 
@@ -421,8 +449,13 @@ class MoneyManager extends Component {
                   </li>
                   {transactionsList.map((transaction) => (
                     <TransactionItem
+<<<<<<< HEAD
                       key={transaction.transactionId}
                       transactionDetails={transaction}
+=======
+                      key={eachTransaction.transactionId}
+                      transactionDetails={eachTransaction}
+>>>>>>> 0e153cf8619f2b3a5d2e1fe39220d58860acf8b3
                       deleteTransaction={this.deleteTransaction}
                       updateTransaction={this.updateTransaction}
                       isNightMode={isNightMode}

@@ -16,5 +16,6 @@ const App = () => (
     </Switch>
   </BrowserRouter>
 );
+// const App = () => <MoneyManager />;
 
 export default App;

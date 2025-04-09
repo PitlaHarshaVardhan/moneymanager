@@ -17,6 +17,7 @@
     "mysql2": "^3.14.0",
     "node-cron": "^3.0.3",
     "pdfkit": "^0.16.0",
+    "react-icons": "^5.5.0",
     "server": "file:"
   }
 }
