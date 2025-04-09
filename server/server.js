@@ -19,7 +19,7 @@ app.use(cookieParser());
 
 // MongoDB Atlas Connection
 const uri =
-  "mongodb+srv://sriramkomma2443:Lowda12345@mydb-cluster.46hwdk7.mongodb.net/?retryWrites=true&w=majority&appName=mydb-cluster"; // Replace with your Atlas URI
+  "mongodb+srv://sriramkomma2443:Lowda12345@mydb-cluster.46hwdk7.mongodb.net/?retryWrites=true&w=majority&appName=mydb-cluster";
 const client = new MongoClient(uri);
 
 let db;
@@ -41,8 +41,10 @@ const verifyToken = (req, res, next) => {
   if (!token) return res.status(401).json({ error: "Unauthorized, No Token" });
 
   jwt.verify(token, "first_project_fullstack", (err, decoded) => {
-    if (err)
+    if (err) {
+      console.error("Token verification failed:", err);
       return res.status(401).json({ error: "Unauthorized, Invalid Token" });
+    }
     req.user = decoded;
     next();
   });
@@ -67,7 +69,6 @@ app.post("/register", async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
-    console.log("Connecting to users collection...");
     const usersCollection = db.collection("users");
     const existingUser = await usersCollection.findOne({ email });
     if (existingUser) {
@@ -106,7 +107,6 @@ app.post("/login", async (req, res) => {
   }
 
   try {
-    console.log("Connecting to users collection...");
     const usersCollection = db.collection("users");
     const user = await usersCollection.findOne({ email });
 
@@ -122,14 +122,18 @@ app.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id.toString(), email: user.email },
       "first_project_fullstack",
       { expiresIn: "1h" }
     );
 
     res.cookie("jwt_token", token, { httpOnly: true, secure: false });
     console.log("Login successful for:", email);
-    res.json({ message: "Login successful", token, userId: user._id });
+    res.json({
+      message: "Login successful",
+      token,
+      userId: user._id.toString(),
+    });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Server error" });
@@ -177,18 +181,17 @@ app.post("/transaction", async (req, res) => {
   const currentDate = new Date().toISOString().split("T")[0];
 
   try {
-    console.log("Inserting transaction for user:", userId);
     const transactionsCollection = db.collection("transaction");
-    await transactionsCollection.insertOne({
+    const result = await transactionsCollection.insertOne({
       transactionId,
       title,
-      amount,
+      amount: parseInt(amount),
       type,
       date: currentDate,
       userId,
     });
-    console.log("Transaction inserted successfully");
-    res.json({ message: "Transaction added successfully" });
+    console.log("Transaction inserted successfully:", transactionId);
+    res.json({ message: "Transaction added successfully", transactionId });
   } catch (err) {
     console.error("Error inserting transaction:", err);
     res.status(500).json({ error: "Database error" });
@@ -206,15 +209,27 @@ app.delete("/transaction/:id", verifyToken, async (req, res) => {
   }
 
   try {
-    console.log("Deleting transaction:", id, "for user:", userId);
+    console.log("Attempting to delete transaction:", id, "for user:", userId);
     const transactionsCollection = db.collection("transaction");
+    const transaction = await transactionsCollection.findOne({
+      transactionId: id,
+      userId,
+    });
+    if (!transaction) {
+      console.log("Transaction not found in DB:", id, "for user:", userId);
+      return res
+        .status(404)
+        .json({ error: "Transaction not found or unauthorized" });
+    }
+
     const result = await transactionsCollection.deleteOne({
       transactionId: id,
       userId,
     });
 
+    console.log("Delete result:", result);
     if (result.deletedCount === 0) {
-      console.log("Transaction not found or unauthorized:", id);
+      console.log("No transaction deleted:", id);
       return res
         .status(404)
         .json({ error: "Transaction not found or unauthorized" });
@@ -250,24 +265,68 @@ app.delete("/transactions/clear", verifyToken, async (req, res) => {
   }
 });
 
+// **Update Transaction**
+app.put("/transaction/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const { title, amount, type } = req.body;
+  const userId = req.user.userId;
+
+  if (!title || !amount || !type) {
+    console.log("Validation failed: Missing fields", { title, amount, type });
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  try {
+    console.log("Attempting to update transaction:", id, "for user:", userId);
+    console.log("Update data:", { title, amount: parseInt(amount), type });
+    const transactionsCollection = db.collection("transaction");
+    const transaction = await transactionsCollection.findOne({
+      transactionId: id,
+      userId,
+    });
+    if (!transaction) {
+      console.log("Transaction not found in DB:", id, "for user:", userId);
+      return res
+        .status(404)
+        .json({ error: "Transaction not found or unauthorized" });
+    }
+
+    const result = await transactionsCollection.updateOne(
+      { transactionId: id, userId },
+      { $set: { title, amount: parseInt(amount), type } }
+    );
+
+    console.log("Update result:", result);
+    if (result.matchedCount === 0) {
+      console.log("No transaction matched for update:", id);
+      return res
+        .status(404)
+        .json({ error: "Transaction not found or unauthorized" });
+    }
+
+    console.log("Transaction updated successfully:", id);
+    res.json({ message: "Transaction updated successfully" });
+  } catch (err) {
+    console.error("Error updating transaction:", err);
+    res.status(500).json({ error: "Error updating transaction" });
+  }
+});
+
 // **Cron Job: Month-End Balance**
 cron.schedule("59 23 28-31 * *", async () => {
   console.log("Cron job running at month's end...");
-
   const currentMonth = new Date().getMonth() + 1;
   const lastDay = new Date(new Date().getFullYear(), currentMonth, 0).getDate();
 
   if (new Date().getDate() === lastDay) {
     try {
-      console.log("Fetching all users for cron job...");
       const usersCollection = db.collection("users");
       const transactionsCollection = db.collection("transaction");
 
       const users = await usersCollection.find().toArray();
       for (const user of users) {
-        const userId = user._id;
+        const userId = user._id.toString();
 
-        console.log("Calculating income for user:", userId);
         const income = await transactionsCollection
           .aggregate([
             { $match: { userId, type: "Income" } },
@@ -277,7 +336,6 @@ cron.schedule("59 23 28-31 * *", async () => {
 
         const remainingIncome = income[0]?.total || 0;
 
-        console.log("Inserting previous month balance for user:", userId);
         await transactionsCollection.insertOne({
           transactionId: uuidv4(),
           title: "Previous Month Balance",
@@ -287,12 +345,7 @@ cron.schedule("59 23 28-31 * *", async () => {
           userId,
         });
 
-        console.log("Deleting expenses for user:", userId);
-        await transactionsCollection.deleteMany({
-          userId,
-          type: "Expenses",
-        });
-
+        await transactionsCollection.deleteMany({ userId, type: "Expenses" });
         console.log(`Monthly reset completed successfully for user ${userId}`);
       }
     } catch (err) {
@@ -309,7 +362,6 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
   }.pdf`;
 
   try {
-    console.log("Generating PDF for user:", userId);
     const transactionsCollection = db.collection("transaction");
     const transactions = await transactionsCollection
       .find({ userId })
@@ -374,38 +426,6 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
   } catch (err) {
     console.error("Error generating PDF:", err);
     res.status(500).json({ error: "Failed to fetch transactions" });
-  }
-});
-
-// **Update Transaction**
-app.put("/transaction/:id", verifyToken, async (req, res) => {
-  const { id } = req.params;
-  const { title, amount, type } = req.body;
-  const userId = req.user.userId;
-
-  if (!title || !amount || !type) {
-    console.log("Validation failed: Missing fields");
-    return res.status(400).json({ error: "All fields are required" });
-  }
-
-  try {
-    console.log("Updating transaction:", id, "for user:", userId);
-    const transactionsCollection = db.collection("transaction");
-    const result = await transactionsCollection.updateOne(
-      { transactionId: id, userId },
-      { $set: { title, amount, type } }
-    );
-
-    if (result.matchedCount === 0) {
-      console.log("Transaction not found:", id);
-      return res.status(404).json({ error: "Transaction not found" });
-    }
-
-    console.log("Transaction updated successfully:", id);
-    res.json({ message: "Transaction updated successfully" });
-  } catch (err) {
-    console.error("Error updating transaction:", err);
-    res.status(500).json({ error: "Error updating transaction" });
   }
 });
 

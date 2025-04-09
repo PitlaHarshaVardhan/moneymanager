@@ -1,246 +1,589 @@
-.app-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
+.money-manager-container {
   min-height: 100vh;
-}
-
-.responsive-container {
-  width: 80%;
-  max-width: 550px;
-}
-
-@media screen and (min-width: 768px) {
-  .responsive-container {
-    max-width: 1140px;
-  }
-}
-
-.header-container {
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  text-align: center;
-  background-image: url("../../../public/money-manager-bg.png");
-  background-size: cover;
-  height: 172px;
-  border-radius: 16px;
-  margin-top: 64px;
+  background: #000000;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease;
 }
 
-@media screen and (min-width: 768px) {
-  .header-container {
-    align-items: flex-start;
-    padding: 48px;
+.money-manager-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: transparent;
+  animation: stars-twinkle 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 50px 50px 2px #fff, 150px 200px 3px #fff, 300px 100px 2px #fff,
+    400px 300px 3px #fff, 600px 150px 2px #fff, 700px 350px 3px #fff,
+    900px 250px 2px #fff, 100px 400px 3px #fff, 200px 600px 2px #fff,
+    500px 500px 3px #fff, 750px 100px 2px #ddd, 850px 450px 3px #eee;
+}
+
+.money-manager-container::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: transparent;
+  animation: stars-twinkle 1.5s ease-in-out infinite,
+    stars-drift 25s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 250px 150px 2px #ddd, 350px 250px 3px #eee, 450px 50px 2px #fff,
+    550px 200px 3px #ddd, 650px 300px 2px #eee, 800px 100px 3px #fff,
+    950px 350px 2px #ddd, 120px 500px 3px #eee, 280px 450px 2px #fff,
+    720px 550px 3px #ddd, 1000px 400px 2px #fff, 1100px 200px 3px #eee;
+}
+
+.money-manager-container.night-mode {
+  background: #1a1a1a;
+}
+
+.money-manager-container.night-mode::before,
+.money-manager-container.night-mode::after {
+  box-shadow: none;
+}
+
+@keyframes stars-twinkle {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
   }
 }
 
-.heading {
-  color: #475569;
-  font-family: "Roboto";
-  font-size: 24px;
-  font-weight: 500;
-  margin-bottom: 16px;
-}
-
-@media screen and (min-width: 768px) {
-  .heading {
-    font-size: 30px;
+@keyframes stars-drift {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  100% {
+    transform: translateX(50%) translateY(50%);
   }
 }
 
-.header-content {
-  color: #475569;
-  font-family: "Roboto";
-  font-size: 14px;
-  margin: 0px;
+.money-manager-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 30px;
+  width: 90%;
+  max-width: 1200px;
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
+  animation: fadeIn 0.5s ease-in-out;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
-@media screen and (min-width: 768px) {
-  .header-content {
-    font-size: 18px;
+.money-manager-container.night-mode .money-manager-card {
+  background: rgba(40, 40, 40, 0.95);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.money-manager-text {
-  color: #0b69ff;
-  font-weight: 500;
-}
-
-.transaction-details {
+.header-section {
   display: flex;
-  flex-direction: column;
   justify-content: space-between;
-  width: 100%;
-  margin-bottom: 24px;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-@media screen and (min-width: 768px) {
-  .transaction-details {
-    flex-direction: row;
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo-image {
+  width: 60px;
+  height: 60px;
+  margin-right: 15px;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+  transition: transform 0.3s ease;
+}
+
+.logo-image:hover {
+  transform: rotate(360deg);
+}
+
+.app-title {
+  font-size: 28px;
+  color: #1a3c34;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: color 0.3s ease;
+}
+
+.money-manager-container.night-mode .app-title {
+  color: #00c9ff;
+}
+
+.app-title:hover {
+  color: #00c9ff;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+}
+
+.icon-btn {
+  font-size: 28px;
+  color: #1a3c34;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.money-manager-container.night-mode .icon-btn {
+  color: #ffffff;
+}
+
+.icon-btn:hover {
+  color: #00c9ff;
+  transform: scale(1.2) rotate(10deg);
+}
+
+.welcome-text {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease;
+}
+
+.money-manager-container.night-mode .welcome-text {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.welcome-text::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 2px;
+  background: #1a3c34;
+  transition: background 0.3s ease;
+}
+
+.money-manager-container.night-mode .welcome-text::after {
+  background: #00c9ff;
+}
+
+.greeting {
+  font-size: 28px;
+  color: #1a3c34;
+  font-weight: 600;
+  font-family: "Roboto", sans-serif;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  animation: fadeInDown 0.8s ease-out forwards;
+  transition: color 0.3s ease;
+}
+
+.money-manager-container.night-mode .greeting {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-subtext {
+  font-size: 16px;
+  color: #555;
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.3px;
+  animation: fadeInUp 1s ease-out forwards;
+  transition: color 0.3s ease;
+}
+
+.money-manager-container.night-mode .welcome-subtext {
+  color: #bbbbbb;
+}
+
+@keyframes fadeInDown {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
   }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.main-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
 }
 
 .transaction-form {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  align-items: flex-start;
-  height: 424px;
-  width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  padding-top: 24px;
-  padding-right: 24px;
-  padding-left: 24px;
-  padding-bottom: 32px;
+  flex: 1;
+  min-width: 300px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
-@media screen and (min-width: 768px) {
-  .transaction-form {
-    width: 40%;
-    padding-right: 43px;
-    padding-left: 48px;
-  }
+.money-manager-container.night-mode .transaction-form {
+  background: rgba(60, 60, 60, 0.8);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.transaction-header {
-  color: #475569;
-  font-family: "Roboto";
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1.6;
+.section-title {
+  font-size: 20px;
+  color: #1a3c34;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-@media screen and (min-width: 768px) {
-  .transaction-header {
-    font-size: 20px;
-  }
+.money-manager-container.night-mode .section-title {
+  color: #ffffff;
+}
+
+.input-group {
+  margin-bottom: 20px;
 }
 
 .input-label {
-  color: #7e858e;
-  font-family: "Roboto";
-  font-weight: 500;
-  font-size: 12px;
-  line-height: 1.4;
-  margin-bottom: 0px;
-}
-
-.input {
-  color: #1e293b;
-  background-color: #ffffff;
-  font-family: "Roboto";
-  border: 1px solid #d7dfe9;
-  border-radius: 2px;
-  width: 100%;
-  height: 40px;
-  outline: none;
-  padding: 10px;
-  margin-bottom: 10px;
-  min-width: 157px;
-}
-
-.buttons {
-  background-color: #0b69ff;
-  color: #ffffff;
-  font-family: "Roboto";
+  display: block;
   font-size: 14px;
-  font-weight: 600;
-  min-width: 25px;
-  border-radius: 6px;
-  border: none;
-  padding-left: 24px;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  padding-right: 24px;
-  outline: none;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-.button5 {
-  color: #000000;
-  font-family: "Roboto";
-  font-size: 34px;
-  font-weight: 600;
-  min-width: 25px;
-  border-radius: 6px;
-  border: none;
-  padding-left: 24px;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  padding-right: 24px;
-  outline: none;
-  cursor: pointer;
-  margin-bottom: 10px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  transition: color 0.3s ease;
 }
 
-.history-transactions {
-  width: 100%;
-  min-height: 326px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  padding-left: 24px;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  padding-right: 24px;
-  margin-top: 32px;
+.money-manager-container.night-mode .input-label {
+  color: #cccccc;
 }
 
-@media screen and (min-width: 768px) {
-  .history-transactions {
-    width: 55%;
-    min-height: 424px;
-    padding-top: 24px;
-    padding-left: 28px;
-    padding-right: 41px;
-    padding-bottom: 40px;
-    margin-top: 0px;
-    margin-left: 32px;
-  }
+.input-label:hover {
+  color: #00c9ff;
 }
 
-.transactions-table-container {
-  height: 100%;
+.input-field {
+  width: 90%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
   border-radius: 8px;
+  font-size: 16px;
+  background: #f9f9f9;
+  color: #333;
+  transition: all 0.3s ease;
 }
 
-.transactions-table {
-  padding-left: 0;
-  margin: 0px;
+.money-manager-container.night-mode .input-field {
+  background: #333333;
+  border-color: #555555;
+  color: #ffffff;
+}
+
+.input-field:focus {
+  border-color: #00c9ff;
+  background: white;
+  box-shadow: 0 0 5px rgba(0, 201, 255, 0.5);
+  outline: none;
+}
+
+.money-manager-container.night-mode .input-field:focus {
+  background: #444444;
+}
+
+.input-field:hover {
+  border-color: #92fe9d;
+}
+
+.add-btn {
+  width: 100%;
+  padding: 12px;
+  background: #1a3c34;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.money-manager-container.night-mode .add-btn {
+  background: #00c9ff;
+  color: #1a1a1a;
+}
+
+.add-btn:hover {
+  background: #15332d;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+}
+
+.money-manager-container.night-mode .add-btn:hover {
+  background: #0099cc;
+}
+
+.scanner-container {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.scanner-video {
+  width: 50%;
+  max-width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.transaction-status {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.money-manager-container.night-mode .transaction-status {
+  background: rgba(40, 40, 40, 0.95);
+  color: #ffffff;
+}
+
+.transaction-status p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a3c34;
+}
+
+.money-manager-container.night-mode .transaction-status p {
+  color: #00c9ff;
+}
+
+.history-section {
+  flex: 2;
+  min-width: 300px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.money-manager-container.night-mode .history-section {
+  background: rgba(60, 60, 60, 0.8);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.transactions-scroll-container {
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #1a3c34 #f9f9f9;
+}
+
+.money-manager-container.night-mode .transactions-scroll-container {
+  scrollbar-color: #00c9ff #333333;
+}
+
+.transactions-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.transactions-scroll-container::-webkit-scrollbar-track {
+  background: #f9f9f9;
+}
+
+.money-manager-container.night-mode
+  .transactions-scroll-container::-webkit-scrollbar-track {
+  background: #333333;
+}
+
+.transactions-scroll-container::-webkit-scrollbar-thumb {
+  background: #1a3c34;
+  border-radius: 4px;
+}
+
+.money-manager-container.night-mode
+  .transactions-scroll-container::-webkit-scrollbar-thumb {
+  background: #00c9ff;
+}
+
+.transactions-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #15332d;
+}
+
+.money-manager-container.night-mode
+  .transactions-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #0099cc;
+}
+
+.transactions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .table-header {
   display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  height: 48px;
-  list-style-type: none;
-  border: 1px solid #cbd5e1;
-  padding-left: 10px;
-  padding-right: 10px;
-}
-
-@media screen and (min-width: 768px) {
-  .table-header {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-}
-
-.table-header-cell {
-  color: #334155;
-  font-family: "Roboto";
-  font-size: 12px;
+  justify-content: space-between;
+  background: #1a3c34;
+  color: white;
+  padding: 10px;
+  border-radius: 8px 8px 0 0;
   font-weight: 500;
-  width: 30%;
-  border-right: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
-@media screen and (min-width: 768px) {
-  .table-header-cell {
-    font-size: 16px;
+.money-manager-container.night-mode .table-header {
+  background: #00c9ff;
+  color: #1a1a1a;
+}
+
+.table-header span {
+  flex: 1;
+  text-align: center;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.transaction-item.night-mode {
+  background: rgba(40, 40, 40, 0.9);
+  color: #ffffff;
+  border-bottom: 1px solid #555555;
+}
+
+.transaction-item span {
+  flex: 1;
+  text-align: center;
+}
+
+.edit-field {
+  flex: 1;
+  padding: 5px;
+  margin: 0 5px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.transaction-item.night-mode .edit-field {
+  background: #333333;
+  border-color: #555555;
+  color: #ffffff;
+}
+
+.edit-btn,
+.delete-btn,
+.save-btn,
+.cancel-btn {
+  cursor: pointer;
+  margin: 0 5px;
+  color: #1a3c34;
+}
+
+.transaction-item.night-mode .edit-btn,
+.transaction-item.night-mode .delete-btn,
+.transaction-item.night-mode .save-btn,
+.transaction-item.night-mode .cancel-btn {
+  color: #00c9ff;
+}
+
+.edit-btn:hover,
+.delete-btn:hover,
+.save-btn:hover,
+.cancel-btn:hover {
+  color: #00c9ff;
+}
+
+@media (max-width: 768px) {
+  .money-manager-card {
+    padding: 20px;
+    width: 95%;
+  }
+
+  .header-section {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .logo-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .app-title {
+    font-size: 24px;
+  }
+
+  .icon-btn {
+    font-size: 24px;
+  }
+
+  .main-content {
+    flex-direction: column;
+  }
+
+  .transactions-scroll-container {
+    max-height: 300px;
   }
 }

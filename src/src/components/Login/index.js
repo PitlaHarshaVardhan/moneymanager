@@ -1,7 +1,6 @@
 import { Component } from "react";
 import Cookies from "js-cookie";
 import { Redirect } from "react-router-dom";
-
 import "./index.css";
 
 class Login extends Component {
@@ -22,14 +21,8 @@ class Login extends Component {
 
   onSubmitSuccess = (data) => {
     const { history } = this.props;
-
-    Cookies.set("jwt_token", data.token, {
-      expires: 30,
-      path: "/",
-    });
-
+    Cookies.set("jwt_token", data.token, { expires: 30, path: "/" });
     localStorage.setItem("user", JSON.stringify({ userId: data.userId }));
-
     history.replace("/");
   };
 
@@ -48,7 +41,7 @@ class Login extends Component {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      this.onSubmitFailure("Please enter a valid email with @");
+      this.onSubmitFailure("Please enter a valid email");
       return;
     }
 
@@ -65,14 +58,12 @@ class Login extends Component {
     try {
       const response = await fetch(url, options);
       const data = await response.json();
-      console.log("Login response:", data);
       if (response.ok) {
         this.onSubmitSuccess(data);
       } else {
-        this.onSubmitFailure(data.error || "Something went wrong!");
+        this.onSubmitFailure(data.error || "Invalid credentials");
       }
     } catch (error) {
-      console.error("Network error during login:", error);
       this.onSubmitFailure("Network error. Please try again.");
     }
   };
@@ -80,38 +71,40 @@ class Login extends Component {
   renderPasswordField = () => {
     const { password } = this.state;
     return (
-      <>
-        <label className="input-label3" htmlFor="password">
-          PASSWORD
+      <div className="input-wrapper">
+        <label className="input-label" htmlFor="password">
+          Password
         </label>
         <input
           type="password"
           id="password"
-          className="password-input-field3"
+          className="input-field"
           value={password}
           onChange={this.onChangePassword}
+          placeholder="Enter your password"
           required
         />
-      </>
+      </div>
     );
   };
 
   renderEmailField = () => {
     const { email } = this.state;
     return (
-      <>
-        <label className="input-label3" htmlFor="email">
-          EMAIL
+      <div className="input-wrapper">
+        <label className="input-label" htmlFor="email">
+          Email
         </label>
         <input
           type="email"
           id="email"
-          className="email-input-field3"
+          className="input-field"
           value={email}
           onChange={this.onChangeEmail}
+          placeholder="Enter your email"
           required
         />
-      </>
+      </div>
     );
   };
 
@@ -122,25 +115,32 @@ class Login extends Component {
       return <Redirect to="/" />;
     }
     return (
-      <div className="login-form-container3">
-        <form className="form-container3" onSubmit={this.submitForm}>
-          <img
-            src="https://assets.ccbp.in/frontend/react-js/nxt-trendz-logo-img.png"
-            className="login-website-logo-desktop-image3"
-            alt="website logo"
-          />
-          <div className="input-container3">{this.renderEmailField()}</div>
-          <div className="input-container3">{this.renderPasswordField()}</div>
-          <button type="submit" className="login-button3">
-            Login
-          </button>
-          {showSubmitError && (
-            <div>
-              <p className="error-message3">*{errorMsg}</p>
-              <a href="/register">Register Here</a>
-            </div>
-          )}
-        </form>
+      <div className="login-container">
+        <div className="login-card">
+          <div className="logo-container">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png" // Money manager icon
+              className="logo-image"
+              alt="money manager logo"
+            />
+            <h1 className="app-title">Money Manager</h1>
+          </div>
+          <form className="login-form" onSubmit={this.submitForm}>
+            {this.renderEmailField()}
+            {this.renderPasswordField()}
+            <button type="submit" className="login-btn">
+              Log In
+            </button>
+            {showSubmitError && (
+              <div className="error-container">
+                <p className="error-msg">{errorMsg}</p>
+                <a href="/register" className="register-link">
+                  Create Account
+                </a>
+              </div>
+            )}
+          </form>
+        </div>
       </div>
     );
   }

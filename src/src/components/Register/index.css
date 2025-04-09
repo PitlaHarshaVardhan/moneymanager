@@ -1,121 +1,228 @@
-/* General styling */
-
-.register-form-container4 {
+.register-container {
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  max-width: 500px;
-  background-color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #000000;
   padding: 20px;
-  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
 }
 
-.form-container4 {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* Twinkling Stars Layer 1 */
+.register-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: transparent;
+  animation: stars-twinkle 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 50px 50px 2px #fff, 150px 200px 3px #fff, 300px 100px 2px #fff,
+    400px 300px 3px #fff, 600px 150px 2px #fff, 700px 350px 3px #fff,
+    900px 250px 2px #fff, 100px 400px 3px #fff, 200px 600px 2px #fff,
+    500px 500px 3px #fff, 750px 100px 2px #ddd, 850px 450px 3px #eee;
 }
 
-.register-website-logo-desktop-image4 {
-  width: 150px;
+/* Twinkling Stars Layer 2 with Drift */
+.register-container::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: transparent;
+  animation: stars-twinkle 1.5s ease-in-out infinite,
+    stars-drift 25s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 250px 150px 2px #ddd, 350px 250px 3px #eee, 450px 50px 2px #fff,
+    550px 200px 3px #ddd, 650px 300px 2px #eee, 800px 100px 3px #fff,
+    950px 350px 2px #ddd, 120px 500px 3px #eee, 280px 450px 2px #fff,
+    720px 550px 3px #ddd, 1000px 400px 2px #fff, 1100px 200px 3px #eee;
+}
+
+@keyframes stars-twinkle {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes stars-drift {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  100% {
+    transform: translateX(50%) translateY(50%);
+  }
+}
+
+.register-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 40px 30px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+  animation: fadeIn 0.5s ease-in-out;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo-image {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+  transition: transform 0.3s ease;
+}
+
+.logo-image:hover {
+  transform: rotate(360deg); /* Cool spin effect on hover */
+}
+
+.app-title {
+  font-size: 28px;
+  color: #1a3c34;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: color 0.3s ease;
+}
+
+.app-title:hover {
+  color: #00c9ff; /* Color change on hover */
+}
+
+.register-form {
+  width: 100%;
+}
+
+.input-wrapper {
   margin-bottom: 20px;
 }
 
-.input-container4 {
-  width: 100%;
-  margin-bottom: 15px;
-}
-
-.input-label4 {
+.input-label {
+  display: block;
   font-size: 14px;
+  font-weight: 500;
   color: #333;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  transition: color 0.3s ease;
 }
 
-.username-input-field4,
-.email-input-field4,
-.password-input-field4 {
-  width: 100%;
-  padding: 10px;
+.input-label:hover {
+  color: #1a3c34; /* Subtle hover effect */
+}
+
+.input-field {
+  width: 90%; /* Full width for consistency */
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 16px;
-  border: 1px solid #dcdcdc;
-  border-radius: 4px;
+  transition: all 0.3s ease;
+  background: #f9f9f9;
+}
+
+.input-field:focus {
+  border-color: #00c9ff;
+  background: white;
+  box-shadow: 0 0 5px rgba(0, 201, 255, 0.5);
   outline: none;
-  box-sizing: border-box;
 }
 
-.username-input-field4:focus,
-.email-input-field4:focus,
-.password-input-field4:focus {
-  border-color: #007bff;
+.input-field:hover {
+  border-color: #92fe9d; /* Greenish hover effect */
 }
 
-.register-button4 {
-  background-color: #007bff;
-  color: #ffffff;
-  border: none;
-  padding: 12px;
-  font-size: 16px;
-  border-radius: 4px;
-  cursor: pointer;
+.register-btn {
   width: 100%;
-  transition: background-color 0.3s ease;
+  padding: 12px;
+  background: #1a3c34;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.register-button4:hover {
-  background-color: #0056b3;
+.register-btn:hover {
+  background: #15332d;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+  letter-spacing: 1px; /* Cool spacing effect on hover */
 }
 
-.error-message4 {
-  color: #ff0000;
+.error-container {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.error-msg {
+  color: #ff4444;
   font-size: 14px;
-  margin-top: 10px;
+  margin: 0 0 10px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.register-link4 {
-  display: inline-block;
-  margin-top: 10px;
+.login-link {
+  color: #00c9ff;
   text-decoration: none;
-  color: #007bff;
   font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-.register-link4:hover {
+.login-link:hover {
   text-decoration: underline;
+  color: #92fe9d; /* Matching greenish hover */
 }
 
-/* Responsive design */
+/* Responsive Design */
 @media (max-width: 768px) {
-  .register-form-container4 {
-    width: 90%;
-    padding: 15px;
+  .register-card {
+    padding: 30px 20px;
+    max-width: 350px;
   }
 
-  .register-website-logo-desktop-image4 {
-    width: 120px;
+  .logo-image {
+    width: 60px;
+    height: 60px;
   }
 
-  .register-button4 {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .register-form-container4 {
-    width: 95%;
-    padding: 10px;
-  }
-
-  .register-website-logo-desktop-image4 {
-    width: 100px;
-  }
-
-  .register-button4 {
-    font-size: 12px;
-    padding: 10px;
+  .app-title {
+    font-size: 24px;
   }
 }

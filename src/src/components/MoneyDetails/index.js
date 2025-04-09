@@ -1,7 +1,7 @@
-import './index.css'
+import "./index.css";
 
-const MoneyDetails = props => {
-  const {balanceAmount, incomeAmount, expensesAmount} = props
+const MoneyDetails = (props) => {
+  const { balanceAmount, incomeAmount, expensesAmount } = props;
 
   return (
     <div className="money-details-container">
@@ -14,7 +14,7 @@ const MoneyDetails = props => {
         <div>
           <p className="details-text">Your Balance</p>
           <p className="details-money" data-testid="balanceAmount">
-            Rs {balanceAmount}
+            ₹{balanceAmount}
           </p>
         </div>
       </div>
@@ -27,7 +27,7 @@ const MoneyDetails = props => {
         <div>
           <p className="details-text">Your Income</p>
           <p className="details-money" data-testid="incomeAmount">
-            Rs {incomeAmount}
+            ₹{incomeAmount}
           </p>
         </div>
       </div>
@@ -40,12 +40,12 @@ const MoneyDetails = props => {
         <div>
           <p className="details-text">Your Expenses</p>
           <p className="details-money" data-testid="expensesAmount">
-            Rs {expensesAmount}
+            ₹{expensesAmount}
           </p>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MoneyDetails
+export default MoneyDetails;

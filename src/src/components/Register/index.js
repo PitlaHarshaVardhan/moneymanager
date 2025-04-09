@@ -1,7 +1,6 @@
 import { Component } from "react";
 import { Redirect } from "react-router-dom";
 import Cookies from "js-cookie";
-
 import "./index.css";
 
 class Register extends Component {
@@ -40,7 +39,7 @@ class Register extends Component {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      this.onSubmitFailure("Please enter a valid email with @");
+      this.onSubmitFailure("Please enter a valid email");
       return;
     }
 
@@ -62,72 +61,73 @@ class Register extends Component {
     try {
       const response = await fetch(url, options);
       const data = await response.json();
-      console.log("Register response:", data); // Debug log
       if (response.ok) {
         this.onSubmitSuccess();
       } else {
         this.onSubmitFailure(data.error || "Registration failed. Try again.");
       }
     } catch (error) {
-      console.error("Error during registration:", error);
       this.onSubmitFailure("Network error. Please try again.");
     }
   };
 
-  renderPasswordField = () => {
-    const { password } = this.state;
+  renderUsernameField = () => {
+    const { username } = this.state;
     return (
-      <>
-        <label className="input-label4" htmlFor="password">
-          PASSWORD
+      <div className="input-wrapper">
+        <label className="input-label" htmlFor="username">
+          Username
         </label>
         <input
-          type="password"
-          id="password"
-          className="password-input-field4"
-          value={password}
-          onChange={this.onChangePassword}
+          type="text"
+          id="username"
+          className="input-field"
+          value={username}
+          onChange={this.onChangeUsername}
+          placeholder="Enter your username"
           required
         />
-      </>
+      </div>
     );
   };
 
   renderEmailField = () => {
     const { email } = this.state;
     return (
-      <>
-        <label className="input-label4" htmlFor="email">
-          EMAIL
+      <div className="input-wrapper">
+        <label className="input-label" htmlFor="email">
+          Email
         </label>
         <input
           type="email"
           id="email"
-          className="email-input-field4"
+          className="input-field"
           value={email}
           onChange={this.onChangeEmail}
+          placeholder="Enter your email"
           required
         />
-      </>
+      </div>
     );
   };
 
-  renderUsernameField = () => {
-    const { username } = this.state;
+  renderPasswordField = () => {
+    const { password } = this.state;
     return (
-      <>
-        <label className="input-label4" htmlFor="username">
-          USERNAME
+      <div className="input-wrapper">
+        <label className="input-label" htmlFor="password">
+          Password
         </label>
         <input
-          type="text"
-          id="username"
-          className="username-input-field4"
-          value={username}
-          onChange={this.onChangeUsername}
+          type="password"
+          id="password"
+          className="input-field"
+          value={password}
+          onChange={this.onChangePassword}
+          placeholder="Enter your password"
           required
         />
-      </>
+      </div>
     );
   };
 
@@ -138,21 +138,33 @@ class Register extends Component {
       return <Redirect to="/" />;
     }
     return (
-      <div className="register-form-container4">
-        <form className="form-container4" onSubmit={this.submitForm}>
-          <img
-            src="https://assets.ccbp.in/frontend/react-js/nxt-trendz-logo-img.png"
-            className="register-website-logo-desktop-image4"
-            alt="website logo"
-          />
-          <div className="input-container4">{this.renderUsernameField()}</div>
-          <div className="input-container4">{this.renderEmailField()}</div>
-          <div className="input-container4">{this.renderPasswordField()}</div>
-          <button type="submit" className="register-button4">
-            Register
-          </button>
-          {showSubmitError && <p className="error-message4">*{errorMsg}</p>}
-        </form>
+      <div className="register-container">
+        <div className="register-card">
+          <div className="logo-container">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png" // Money Manager logo
+              className="logo-image"
+              alt="money manager logo"
+            />
+            <h1 className="app-title">Money Manager</h1>
+          </div>
+          <form className="register-form" onSubmit={this.submitForm}>
+            {this.renderUsernameField()}
+            {this.renderEmailField()}
+            {this.renderPasswordField()}
+            <button type="submit" className="register-btn">
+              Register
+            </button>
+            {showSubmitError && (
+              <div className="error-container">
+                <p className="error-msg">{errorMsg}</p>
+                <a href="/login" className="login-link">
+                  Already have an account? Login
+                </a>
+              </div>
+            )}
+          </form>
+        </div>
       </div>
     );
   }

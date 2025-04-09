@@ -1,58 +1,255 @@
-.table-row {
-    display: flex;
-    justify-content: space-between;
-    list-style-type: none;
-    border-bottom: 1px solid #cbd5e1;
-    border-right: 1px solid #cbd5e1;
-    border-left: 1px solid #cbd5e1;
-    padding-left: 10px;
-    padding-right: 10px;
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  padding: 15px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 201, 255, 0.2);
+  background: rgba(255, 255, 255, 1);
+}
+
+.view-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.transaction-text {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  font-family: "Roboto";
+  text-align: center;
+  padding: 0 10px;
+  transition: color 0.3s ease;
+}
+
+.transaction-item:hover .transaction-text {
+  color: #1a3c34;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-btn,
+.delete-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #1a3c34;
+  transition: all 0.3s ease;
+  padding: 5px;
+}
+
+.edit-btn:hover {
+  color: #00c9ff;
+  transform: scale(1.2) rotate(10deg);
+}
+
+.delete-btn:hover {
+  color: #ff4444;
+  transform: scale(1.2) rotate(-10deg);
+}
+
+.edit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.edit-field {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid #e0e0e0;
+  border-radius: 5px;
+  font-size: 14px;
+  background: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.edit-field:focus {
+  border-color: #00c9ff;
+  background: white;
+  box-shadow: 0 0 5px rgba(0, 201, 255, 0.5);
+  outline: none;
+}
+
+.edit-field:hover {
+  border-color: #92fe9d;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.save-btn,
+.cancel-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #1a3c34;
+  transition: all 0.3s ease;
+  padding: 5px;
+}
+
+.save-btn:hover {
+  color: #92fe9d;
+  transform: scale(1.2);
+}
+
+.cancel-btn:hover {
+  color: #ff4444;
+  transform: scale(1.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .transaction-item {
+    padding: 10px;
   }
-  
-  @media screen and (min-width: 768px) {
-    .table-row {
-      padding-left: 24px;
-      padding-right: 24px;
-    }
-  }
-  
+
   .transaction-text {
-    color: #475569;
-    font-family: 'Roboto';
     font-size: 12px;
-    width: 30%;
   }
-  
-  @media screen and (min-width: 768px) {
-    .transaction-text {
-      font-size: 14px;
-    }
+
+  .edit-btn,
+  .delete-btn,
+  .save-btn,
+  .cancel-btn {
+    font-size: 16px;
   }
-  
-  .delete-container {
-    display: flex;
-    width: 10%;
+
+  .edit-field {
+    font-size: 12px;
+    padding: 6px;
   }
-  
-  .delete-button {
-    background: transparent;
-    outline: none;
-    border: none;
-    cursor: pointer;
-  }
-  
-  .delete-img {
-    background: transparent;
-    width: 20px;
-    height: 20px;
-    align-self: center;
-    border: none;
-    outline: none;
-  }
-  
-  @media screen and (min-width: 768px) {
-    .delete-img {
-      margin-right: 24px;
-    }
-  }
-  
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.transaction-item.night-mode {
+  background: rgba(40, 40, 40, 0.9);
+  color: #ffffff;
+  border-bottom: 1px solid #555555;
+}
+
+.transaction-item span {
+  flex: 1;
+  text-align: center;
+}
+
+.edit-field {
+  flex: 1;
+  padding: 5px;
+  margin: 0 5px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.transaction-item.night-mode .edit-field {
+  background: #333333;
+  border-color: #555555;
+  color: #ffffff;
+}
+
+.edit-btn,
+.delete-btn,
+.save-btn,
+.cancel-btn {
+  cursor: pointer;
+  margin: 0 5px;
+  color: #1a3c34;
+}
+
+.transaction-item.night-mode .edit-btn,
+.transaction-item.night-mode .delete-btn,
+.transaction-item.night-mode .save-btn,
+.transaction-item.night-mode .cancel-btn {
+  color: #00c9ff;
+}
+
+.edit-btn:hover,
+.delete-btn:hover,
+.save-btn:hover,
+.cancel-btn:hover {
+  color: #00c9ff;
+}
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.transaction-item.night-mode {
+  background: rgba(40, 40, 40, 0.9);
+  color: #ffffff;
+  border-bottom: 1px solid #555555;
+}
+
+.transaction-item span {
+  flex: 1;
+  text-align: center;
+}
+
+.edit-field {
+  flex: 1;
+  padding: 5px;
+  margin: 0 5px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.transaction-item.night-mode .edit-field {
+  background: #333333;
+  border-color: #555555;
+  color: #ffffff;
+}
+
+.edit-btn,
+.delete-btn,
+.save-btn,
+.cancel-btn {
+  cursor: pointer;
+  margin: 0 5px;
+  color: #1a3c34;
+}
+
+.transaction-item.night-mode .edit-btn,
+.transaction-item.night-mode .delete-btn,
+.transaction-item.night-mode .save-btn,
+.transaction-item.night-mode .cancel-btn {
+  color: #00c9ff;
+}
+
+.edit-btn:hover,
+.delete-btn:hover,
+.save-btn:hover,
+.cancel-btn:hover {
+  color: #00c9ff;
+}

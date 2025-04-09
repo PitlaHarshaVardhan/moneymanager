@@ -1,10 +1,8 @@
 import { Component } from "react";
-// import { useHistory } from "react-router-dom";
-// import { v4 } from "uuid";
 import { IoIosQrScanner } from "react-icons/io";
 import { MdDeleteForever } from "react-icons/md";
 import { IoIosLogOut } from "react-icons/io";
-import { FaCloudDownloadAlt } from "react-icons/fa";
+import { FaCloudDownloadAlt, FaSun, FaMoon } from "react-icons/fa";
 import Cookies from "js-cookie";
 import axios from "axios";
 import QrScanner from "qr-scanner";
@@ -13,14 +11,8 @@ import MoneyDetails from "../MoneyDetails";
 import "./index.css";
 
 const transactionTypeOptions = [
-  {
-    optionId: "INCOME",
-    displayText: "Income",
-  },
-  {
-    optionId: "EXPENSES",
-    displayText: "Expenses",
-  },
+  { optionId: "INCOME", displayText: "Income" },
+  { optionId: "EXPENSES", displayText: "Expenses" },
 ];
 
 QrScanner.WORKER_PATH =
@@ -33,7 +25,8 @@ class MoneyManager extends Component {
     amountInput: "",
     optionId: transactionTypeOptions[0].optionId,
     isScannerActive: false,
-    scannerData: null,
+    isNightMode: false,
+    transactionStatus: null,
   };
 
   componentDidMount() {
@@ -48,23 +41,17 @@ class MoneyManager extends Component {
 
   componentWillUnmount() {
     if (this.qrScanner) {
-      this.qrScanner.destroy(); // Stop the QR scanner when the component is unmounted
+      this.qrScanner.destroy();
     }
   }
 
   fetchTransactions = () => {
     axios
       .get("http://localhost:3001/transaction", { withCredentials: true })
-      .then((response) => {
-        this.setState({ transactionsList: response.data });
-        console.log(response.data);
-      })
-      .catch((error) => {
-        console.error("There was an error fetching the transactions!", error);
-      });
+      .then((response) => this.setState({ transactionsList: response.data }))
+      .catch((error) => console.error("Error fetching transactions:", error));
   };
 
-  // Initialize QR Scanner when it's activated
   initializeScanner = () => {
     const videoElem = document.getElementById("scanner-video");
     if (videoElem) {
@@ -74,50 +61,107 @@ class MoneyManager extends Component {
         this.handleError
       );
       this.qrScanner.start();
-    } else {
-      console.error("QR Scanner: video element not found");
     }
   };
 
-  handleScan = (data, history) => {
+  handleScan = (data) => {
     if (data) {
-      alert("QR Code Scanned: " + data);
-      history.push(`/payment/${data}`);
+      this.qrScanner.stop();
+      this.setState({ isScannerActive: false });
+
+      let amount = null;
+      if (data.startsWith("upi://")) {
+        const urlParams = new URLSearchParams(data.split("?")[1]);
+        amount = urlParams.get("am") || null;
+      } else if (data.includes("amount=")) {
+        amount = data.split("amount=")[1];
+      }
+
+      if (amount && !isNaN(amount)) {
+        this.processPayment(parseInt(amount));
+      } else {
+        this.setState({
+          transactionStatus: "Invalid QR Code: No amount found",
+        });
+      }
     }
   };
 
   handleError = (err) => {
     console.error("QR Scanner Error: ", err);
+    this.setState({ transactionStatus: "Scan Failed: Please try again" });
+  };
+
+  processPayment = (amount) => {
+    const upiId = "7093085723@ybl";
+    const userId = JSON.parse(localStorage.getItem("user"))?.userId;
+
+    if (!userId) {
+      this.setState({ transactionStatus: "Error: User not logged in" });
+      return;
+    }
+
+    const upiIntent = `upi://pay?pa=${upiId}&pn=Payee&am=${amount}&cu=INR`;
+    window.location.href = upiIntent;
+
+    setTimeout(() => {
+      this.setState({ transactionStatus: "Transaction Success" });
+      this.addExpenseAfterPayment(amount, userId);
+    }, 2000);
+  };
+
+  addExpenseAfterPayment = (amount, userId) => {
+    const expense = {
+      title: "UPI Payment",
+      amount: amount,
+      type: "Expenses",
+      userId: userId,
+      date: new Date().toISOString(),
+    };
+
+    axios
+      .post("http://localhost:3001/transaction", expense, {
+        withCredentials: true,
+      })
+      .then(() => {
+        this.fetchTransactions();
+        setTimeout(() => this.setState({ transactionStatus: null }), 3000);
+      })
+      .catch((error) => {
+        console.error("Error adding expense:", error);
+        this.setState({ transactionStatus: "Error adding to expenses" });
+      });
   };
 
   toggleScanner = () => {
     this.setState((prevState) => {
       const newScannerState = !prevState.isScannerActive;
-      if (newScannerState) {
-        this.initializeScanner();
-      } else {
-        this.qrScanner.stop();
-      }
-      return { isScannerActive: newScannerState };
+      if (!newScannerState && this.qrScanner) this.qrScanner.stop();
+      return { isScannerActive: newScannerState, transactionStatus: null };
     });
   };
 
-  deleteTransaction = (transactionid) => {
-    const { transactionsList } = this.state;
+  toggleNightMode = () => {
+    this.setState((prevState) => ({ isNightMode: !prevState.isNightMode }));
+  };
+
+  deleteTransaction = (transactionId) => {
     axios
-      .delete(`http://localhost:3001/transaction/${transactionid}`, {
+      .delete(`http://localhost:3001/transaction/${transactionId}`, {
         withCredentials: true,
-      }) // Ensure credentials are included
-      .then(() => {
-        const updatedTransactionList = transactionsList.filter(
-          (eachTransaction) => transactionid !== eachTransaction.transactionid
-        );
-        this.setState({ transactionsList: updatedTransactionList });
+      })
+      .then((response) => {
+        console.log("Delete response:", response.data);
+        this.setState((prevState) => ({
+          transactionsList: prevState.transactionsList.filter(
+            (t) => t.transactionId !== transactionId
+          ),
+        }));
       })
       .catch((error) => {
         console.error(
           "Error deleting transaction:",
-          error.response?.data?.message || error.message
+          error.response?.data || error
         );
       });
   };
@@ -127,30 +171,32 @@ class MoneyManager extends Component {
       .delete("http://localhost:3001/transactions/clear", {
         withCredentials: true,
       })
-      .then(() => {
-        this.setState({ transactionsList: [] }); // Clear transactions in the state
-        console.log("All transactions cleared successfully");
-      })
-      .catch((error) => {
-        console.error(
-          "Error clearing transactions:",
-          error.response?.data?.message || error.message
-        );
-      });
+      .then(() => this.setState({ transactionsList: [] }))
+      .catch((error) => console.error("Error clearing transactions:", error));
   };
 
-  updateTransaction = (transactionid, updatedTransaction) => {
+  updateTransaction = (transactionId, updatedTransaction) => {
+    console.log(
+      "Updating transaction with ID:",
+      transactionId,
+      "Data:",
+      updatedTransaction
+    );
     axios
       .put(
-        `http://localhost:3001/transaction/${transactionid}`,
+        `http://localhost:3001/transaction/${transactionId}`,
         updatedTransaction,
         { withCredentials: true }
       )
-      .then(() => {
-        this.fetchTransactions(); // Refresh transactions after updating
+      .then((response) => {
+        console.log("Update response:", response.data);
+        this.fetchTransactions();
       })
       .catch((error) => {
-        console.error("Error updating transaction:", error);
+        console.error(
+          "Error updating transaction:",
+          error.response?.data || error
+        );
       });
   };
 
@@ -158,17 +204,11 @@ class MoneyManager extends Component {
     event.preventDefault();
     const { titleInput, amountInput, optionId } = this.state;
     const typeOption = transactionTypeOptions.find(
-      (eachTransaction) => eachTransaction.optionId === optionId
+      (opt) => opt.optionId === optionId
     );
-    const { displayText } = typeOption;
+    const userId = JSON.parse(localStorage.getItem("user"))?.userId;
 
-    const userId = JSON.parse(localStorage.getItem("user")).userId;
-    // Retrieve userId
-
-    if (!userId) {
-      console.error("User ID not found! Ensure the user is logged in.");
-      return;
-    }
+    if (!userId) return console.error("User ID not found!");
 
     axios
       .post(
@@ -176,86 +216,52 @@ class MoneyManager extends Component {
         {
           title: titleInput,
           amount: parseInt(amountInput),
-          type: displayText,
-          userId: userId,
+          type: typeOption.displayText,
+          userId,
         },
         { withCredentials: true }
       )
       .then(() => {
-        this.fetchTransactions(); // Refresh transactions after adding
+        this.fetchTransactions();
         this.setState({
           titleInput: "",
           amountInput: "",
           optionId: transactionTypeOptions[0].optionId,
         });
       })
-      .catch((error) => {
-        console.error("There was an error adding the transaction!", error);
-      });
+      .catch((error) => console.error("Error adding transaction:", error));
   };
 
-  onChangeOptionId = (event) => {
-    this.setState({ optionId: event.target.value });
-  };
-
-  onChangeAmountInput = (event) => {
+  onChangeOptionId = (event) => this.setState({ optionId: event.target.value });
+  onChangeAmountInput = (event) =>
     this.setState({ amountInput: event.target.value });
-  };
-
-  onChangeTitleInput = (event) => {
+  onChangeTitleInput = (event) =>
     this.setState({ titleInput: event.target.value });
-  };
 
   getExpenses = () => {
-    const { transactionsList } = this.state;
-    let expensesAmount = 0;
-    transactionsList.forEach((eachTransaction) => {
-      if (eachTransaction.type === transactionTypeOptions[1].displayText) {
-        expensesAmount += eachTransaction.amount;
-      }
-    });
-    return expensesAmount;
+    return this.state.transactionsList.reduce(
+      (sum, t) => (t.type === "Expenses" ? sum + t.amount : sum),
+      0
+    );
   };
 
   getIncome = () => {
-    const { transactionsList } = this.state;
-    let incomeAmount = 0;
-    transactionsList.forEach((eachTransaction) => {
-      if (eachTransaction.type === transactionTypeOptions[0].displayText) {
-        incomeAmount += eachTransaction.amount;
-      }
-    });
-    return incomeAmount;
+    return this.state.transactionsList.reduce(
+      (sum, t) => (t.type === "Income" ? sum + t.amount : sum),
+      0
+    );
   };
 
-  getBalance = () => {
-    const { transactionsList } = this.state;
-    let balanceAmount = 0;
-    let incomeAmount = 0;
-    let expensesAmount = 0;
-
-    transactionsList.forEach((eachTransaction) => {
-      if (eachTransaction.type === transactionTypeOptions[0].displayText) {
-        incomeAmount += eachTransaction.amount;
-      } else {
-        expensesAmount += eachTransaction.amount;
-      }
-    });
-
-    balanceAmount = incomeAmount - expensesAmount;
-    return balanceAmount;
-  };
+  getBalance = () => this.getIncome() - this.getExpenses();
 
   logout = () => {
     axios
-      .post("http://localhost:3001/logout", {}, { withCredentials: true }) // Ensure credentials are included
+      .post("http://localhost:3001/logout", {}, { withCredentials: true })
       .then(() => {
-        Cookies.remove("jwt_token"); // Remove token from client-side
-        window.location.href = "/login"; // Redirect to login page
+        Cookies.remove("jwt_token");
+        window.location.href = "/login";
       })
-      .catch((error) => {
-        console.error("Logout failed", error);
-      });
+      .catch((error) => console.error("Logout failed:", error));
   };
 
   render() {
@@ -265,116 +271,161 @@ class MoneyManager extends Component {
       optionId,
       transactionsList,
       isScannerActive,
+      isNightMode,
+      transactionStatus,
     } = this.state;
-
     const balanceAmount = this.getBalance();
     const incomeAmount = this.getIncome();
     const expensesAmount = this.getExpenses();
 
     return (
-      <div className="app-container1">
-        <div className="responsive-container1">
-          <div className="header-container1">
-            <h1 className="heading">Hi, BACHELORS</h1>
-            <p className="header-content">
-              Welcome back to your
-              <span className="money-manager-text"> Money Manager</span>
+      <div
+        className={`money-manager-container ${
+          isNightMode ? "night-mode" : ""
+        }`}>
+        <div className="money-manager-card">
+          <div className="header-section">
+            <div className="logo-container">
+              <img
+                src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png"
+                className="logo-image"
+                alt="money manager logo"
+              />
+              <h1 className="app-title">Money Manager</h1>
+            </div>
+            <div className="action-buttons">
+              <FaCloudDownloadAlt
+                className="icon-btn"
+                onClick={() =>
+                  window.open("http://localhost:3001/generate-pdf", "_blank")
+                }
+                title="Download Report"
+              />
+              <MdDeleteForever
+                className="icon-btn"
+                onClick={this.clearAllTransactions}
+                title="Clear All"
+              />
+              <IoIosQrScanner
+                className="icon-btn"
+                onClick={this.toggleScanner}
+                title={isScannerActive ? "Close Scanner" : "Open Scanner"}
+              />
+              <IoIosLogOut
+                className="icon-btn"
+                onClick={this.logout}
+                title="Logout"
+              />
+              {isNightMode ? (
+                <FaSun
+                  className="icon-btn"
+                  onClick={this.toggleNightMode}
+                  title="Switch to Light Mode"
+                />
+              ) : (
+                <FaMoon
+                  className="icon-btn"
+                  onClick={this.toggleNightMode}
+                  title="Switch to Night Mode"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="welcome-text">
+            <h2 className="greeting">Hi, Bachelors!</h2>
+            <p className="welcome-subtext">
+              Welcome back to your financial hub
             </p>
           </div>
-          <FaCloudDownloadAlt
-            className="button5"
-            onClick={() =>
-              window.open("http://localhost:3001/generate-pdf", "_blank")
-            }
-          />
-          {/* <button>Download Monthly Report</button> */}
-          <MdDeleteForever
-            className="button5"
-            onClick={this.clearAllTransactions}
-          />
-          {/* <button >
-            Clear All Transactions
-          </button> */}
-          <IoIosQrScanner className="button5" onClick={this.toggleScanner} />
-          {/* <button>
-            {isScannerActive ? "Close Scanner" : "Open QR Scanner"}
-          </button> */}
-          <IoIosLogOut className="button5" onClick={this.logout} />
-          {/* <button>Logout</button> */}
 
           <MoneyDetails
             balanceAmount={balanceAmount}
             incomeAmount={incomeAmount}
             expensesAmount={expensesAmount}
+            isNightMode={isNightMode}
           />
-          <div className="transaction-details">
+
+          <div className="main-content">
             <form className="transaction-form" onSubmit={this.onAddTransaction}>
-              <h1 className="transaction-header">Add Transaction</h1>
-              <label className="input-label" htmlFor="title">
-                TITLE
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={titleInput}
-                onChange={this.onChangeTitleInput}
-                className="input"
-                placeholder="TITLE"
-              />
-              <label className="input-label" htmlFor="amount">
-                AMOUNT
-              </label>
-              <input
-                type="text"
-                id="amount"
-                className="input"
-                value={amountInput}
-                onChange={this.onChangeAmountInput}
-                placeholder="AMOUNT"
-              />
-              <label className="input-label" htmlFor="select">
-                TYPE
-              </label>
-              <select
-                id="select"
-                className="input"
-                value={optionId}
-                onChange={this.onChangeOptionId}
-              >
-                {transactionTypeOptions.map((eachOption) => (
-                  <option key={eachOption.optionId} value={eachOption.optionId}>
-                    {eachOption.displayText}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="buttons">
-                Add
+              <h2 className="section-title">Add Transaction</h2>
+              <div className="input-group">
+                <label className="input-label" htmlFor="title">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={titleInput}
+                  onChange={this.onChangeTitleInput}
+                  className="input-field"
+                  placeholder="Enter title"
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label" htmlFor="amount">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  id="amount"
+                  value={amountInput}
+                  onChange={this.onChangeAmountInput}
+                  className="input-field"
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label" htmlFor="type">
+                  Type
+                </label>
+                <select
+                  id="type"
+                  className="input-field"
+                  value={optionId}
+                  onChange={this.onChangeOptionId}>
+                  {transactionTypeOptions.map((opt) => (
+                    <option key={opt.optionId} value={opt.optionId}>
+                      {opt.displayText}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className="add-btn">
+                Add Transaction
               </button>
             </form>
 
-            {/* QR Scanner */}
             {isScannerActive && (
               <div className="scanner-container">
-                <video id="scanner-video" className="scanner" />
+                <video id="scanner-video" className="scanner-video" />
               </div>
             )}
 
-            <div className="history-transactions">
-              <h1 className="transaction-header">History</h1>
-              <div className="transactions-table-container">
-                <ul className="transactions-table">
+            {transactionStatus && (
+              <div className="transaction-status">
+                <p>{transactionStatus}</p>
+              </div>
+            )}
+
+            <div className="history-section">
+              <h2 className="section-title">Transaction History</h2>
+              <div className="transactions-scroll-container">
+                <ul className="transactions-list">
                   <li className="table-header">
-                    <p className="table-header-cell">Title</p>
-                    <p className="table-header-cell">Amount</p>
-                    <p className="table-header-cell">Type</p>
-                    <p className="table-header-cell">Date</p>
+                    <span>Title</span>
+                    <span>Amount</span>
+                    <span>Type</span>
+                    <span>Date</span>
+                    <span>Actions</span>
                   </li>
-                  {transactionsList.map((eachTransaction) => (
+                  {transactionsList.map((transaction) => (
                     <TransactionItem
-                      key={eachTransaction.transactionid}
-                      transactionDetails={eachTransaction}
+                      key={transaction.transactionId}
+                      transactionDetails={transaction}
                       deleteTransaction={this.deleteTransaction}
-                      updateTransaction={this.updateTransaction} // ✅ Pass it here
+                      updateTransaction={this.updateTransaction}
+                      isNightMode={isNightMode}
                     />
                   ))}
                 </ul>

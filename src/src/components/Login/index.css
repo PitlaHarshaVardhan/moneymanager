@@ -1,137 +1,219 @@
-/* index.css */
-
-/* Global styles */
-
-/* Container for the login form */
-.login-form-container3 {
+.login-container {
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
+  background: #000000; /* Black background */
   padding: 20px;
-  width: 100%;
-  max-width: 400px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
 }
 
-.login-website-logo-mobile-image3,
-.login-website-logo-desktop-image3 {
+/* Adding more dynamic stars */
+.login-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%; /* Wider to allow movement */
+  height: 200%; /* Taller to allow movement */
+  background: transparent;
+  animation: stars-move 15s linear infinite; /* Moving animation */
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 50px 50px 1px #fff, 150px 200px 2px #fff, 300px 100px 1px #fff,
+    400px 300px 2px #fff, 600px 150px 1px #fff, 700px 350px 2px #fff,
+    900px 250px 1px #fff, 100px 400px 2px #fff, 200px 600px 1px #fff,
+    500px 500px 2px #fff, 800px 50px 1px #ddd, 950px 200px 2px #eee;
+}
+
+.login-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 200%;
+  background: transparent;
+  animation: stars-twinkle 3s ease-in-out infinite,
+    stars-drift 20s linear infinite; /* Twinkle + drift */
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 250px 150px 1px #ddd, 350px 250px 2px #eee, 450px 50px 1px #fff,
+    550px 200px 2px #ddd, 650px 300px 1px #eee, 800px 100px 2px #fff,
+    950px 350px 1px #ddd, 120px 500px 2px #eee, 280px 450px 1px #fff,
+    720px 550px 2px #ddd, 1000px 400px 1px #fff;
+}
+
+/* Animation for moving stars */
+@keyframes stars-move {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-50%);
+    opacity: 0.8;
+  }
+}
+
+/* Animation for twinkling effect */
+@keyframes stars-twinkle {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+/* Animation for drifting effect */
+@keyframes stars-drift {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  100% {
+    transform: translateX(50%) translateY(50%);
+  }
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 40px 30px;
   width: 100%;
-  max-width: 150px;
+  max-width: 450px;
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+  animation: fadeIn 0.5s ease-in-out;
+  position: relative;
+  z-index: 1; /* Ensures card is above stars */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo-image {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+}
+
+.app-title {
+  font-size: 28px;
+  color: #1a3c34;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.login-form {
+  width: 100%;
+}
+
+.input-wrapper {
   margin-bottom: 20px;
 }
 
-.login-image3 {
-  width: 100%;
-  height: auto;
-  margin-bottom: 20px;
-}
-
-.form-container3 {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.input-container3 {
-  width: 100%;
-  margin-bottom: 15px;
-}
-
-.input-label3 {
+.input-label {
+  display: block;
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 500;
   color: #333;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 
-.username-input-field3,
-.password-input-field3 {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.input-field {
+  width: 88%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 16px;
-  color: #333;
+  transition: all 0.3s ease;
+  background: #f9f9f9;
+}
+
+.input-field:focus {
+  border-color: #00c9ff;
+  background: white;
+  box-shadow: 0 0 5px rgba(0, 201, 255, 0.5);
   outline: none;
-  transition: border-color 0.3s ease;
 }
 
-.username-input-field3:focus,
-.password-input-field3:focus {
-  border-color: #007bff;
-}
-
-.login-button3 {
+.login-btn {
   width: 100%;
   padding: 12px;
-  background-color: #007bff;
+  background: #1a3c34;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-.login-button3:hover {
-  background-color: #0056b3;
+.login-btn:hover {
+  background: #15332d;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
 }
 
-.error-message3 {
-  color: red;
-  font-size: 14px;
-  margin-top: 10px;
+.error-container {
   text-align: center;
+  margin-top: 15px;
 }
 
-/* Responsive styles */
+.error-msg {
+  color: #ff4444;
+  font-size: 14px;
+  margin: 0 0 10px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.register-link {
+  color: #00c9ff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.register-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-  .login-form-container3 {
+  .login-card {
+    padding: 30px 20px;
     max-width: 350px;
   }
 
-  .login-website-logo-mobile-image3 {
-    max-width: 120px;
+  .logo-image {
+    width: 60px;
+    height: 60px;
   }
 
-  .login-image3 {
-    display: none;
-  }
-}
-
-@media (min-width: 769px) {
-  .login-image3 {
-    max-width: 300px;
-  }
-
-  .login-form-container3 {
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    max-width: 600px;
-  }
-
-  .form-container3 {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-left: 20px;
-  }
-
-  .input-container3 {
-    width: 80%;
-  }
-
-  .login-button3 {
-    width: auto;
-  }
-
-  .error-message3 {
-    text-align: left;
+  .app-title {
+    font-size: 24px;
   }
 }
