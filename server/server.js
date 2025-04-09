@@ -429,8 +429,6 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
 // **Update Transaction**
 app.put("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
@@ -464,7 +462,6 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
   }
 });
 
->>>>>>> 0e153cf8619f2b3a5d2e1fe39220d58860acf8b3
 // **Start Server**
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
