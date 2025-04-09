@@ -428,6 +428,10 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
+<<<<<<< HEAD
+=======
+
+>>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
 // **Update Transaction**
 app.put("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
@@ -460,6 +464,10 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Error updating transaction" });
   }
 });
+<<<<<<< HEAD
+=======
+
+>>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
 // **Start Server**
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
