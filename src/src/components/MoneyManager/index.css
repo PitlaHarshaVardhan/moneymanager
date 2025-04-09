@@ -10,43 +10,6 @@
   transition: background 0.3s ease;
 }
 
-.app-containers {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.responsive-container1 {
-  width: 80%;
-  max-width: 550px;
-}
-
-@media screen and (min-width: 768px) {
-  .responsive-container1 {
-    max-width: 1140px;
-  }
-}
-
-.header-container1 {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #000000;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.3s ease;
-}
-
-@media screen and (min-width: 768px) {
-  .header-container1 {
-    align-items: flex-start;
-    padding: 48px;
-  }
-}
-
 .money-manager-container::before {
   content: "";
   position: absolute;
@@ -290,7 +253,7 @@
   }
 }
 
-.main-content {
+.transaction-details {
   display: flex;
   flex-wrap: wrap;
   gap: 30px;
@@ -311,19 +274,15 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.section-title {
+.transaction-header {
   font-size: 20px;
   color: #1a3c34;
   margin-bottom: 20px;
   text-align: center;
 }
 
-.money-manager-container.night-mode .section-title {
+.money-manager-container.night-mode .transaction-header {
   color: #ffffff;
-}
-
-.input-group {
-  margin-bottom: 20px;
 }
 
 .input-label {
@@ -331,7 +290,7 @@
   font-size: 14px;
   font-weight: 500;
   color: #333;
-  margin-bottom: 8px;
+  margin-bottom: 10px; /* Set explicitly as per original */
   transition: color 0.3s ease;
 }
 
@@ -343,39 +302,40 @@
   color: #00c9ff;
 }
 
-.input-field {
-  width: 90%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
+.input {
+  width: 85%;
+  padding: 10px;
+  border: 4px solid #e0e0e0;
   border-radius: 8px;
   font-size: 16px;
   background: #f9f9f9;
   color: #333;
+  margin-top: 3px;
   transition: all 0.3s ease;
 }
 
-.money-manager-container.night-mode .input-field {
+.money-manager-container.night-mode .input {
   background: #333333;
   border-color: #555555;
   color: #ffffff;
 }
 
-.input-field:focus {
+.input:focus {
   border-color: #00c9ff;
   background: white;
   box-shadow: 0 0 5px rgba(0, 201, 255, 0.5);
   outline: none;
 }
 
-.money-manager-container.night-mode .input-field:focus {
+.money-manager-container.night-mode .input:focus {
   background: #444444;
 }
 
-.input-field:hover {
+.input:hover {
   border-color: #92fe9d;
 }
 
-.add-btn {
+.buttons {
   width: 100%;
   padding: 12px;
   background: #1a3c34;
@@ -384,22 +344,23 @@
   border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
+  margin-top: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.money-manager-container.night-mode .add-btn {
+.money-manager-container.night-mode .buttons {
   background: #00c9ff;
   color: #1a1a1a;
 }
 
-.add-btn:hover {
+.buttons:hover {
   background: #15332d;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
 }
 
-.money-manager-container.night-mode .add-btn:hover {
+.money-manager-container.night-mode .buttons:hover {
   background: #0099cc;
 }
 
@@ -411,44 +372,14 @@
   align-items: center;
 }
 
-.scanner-video {
+.scanner {
   width: 50%;
   max-width: 400px;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.transaction-status {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(255, 255, 255, 0.95);
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  text-align: center;
-  animation: fadeIn 0.5s ease-out;
-}
-
-.money-manager-container.night-mode .transaction-status {
-  background: rgba(40, 40, 40, 0.95);
-  color: #ffffff;
-}
-
-.transaction-status p {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: #1a3c34;
-}
-
-.money-manager-container.night-mode .transaction-status p {
-  color: #00c9ff;
-}
-
-.history-section {
+.history-transactions {
   flex: 2;
   min-width: 300px;
   background: rgba(255, 255, 255, 0.8);
@@ -458,55 +389,55 @@
   transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
-.money-manager-container.night-mode .history-section {
+.money-manager-container.night-mode .history-transactions {
   background: rgba(60, 60, 60, 0.8);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.transactions-scroll-container {
+.transactions-table-container {
   max-height: 400px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #1a3c34 #f9f9f9;
 }
 
-.money-manager-container.night-mode .transactions-scroll-container {
+.money-manager-container.night-mode .transactions-table-container {
   scrollbar-color: #00c9ff #333333;
 }
 
-.transactions-scroll-container::-webkit-scrollbar {
+.transactions-table-container::-webkit-scrollbar {
   width: 8px;
 }
 
-.transactions-scroll-container::-webkit-scrollbar-track {
+.transactions-table-container::-webkit-scrollbar-track {
   background: #f9f9f9;
 }
 
 .money-manager-container.night-mode
-  .transactions-scroll-container::-webkit-scrollbar-track {
+  .transactions-table-container::-webkit-scrollbar-track {
   background: #333333;
 }
 
-.transactions-scroll-container::-webkit-scrollbar-thumb {
+.transactions-table-container::-webkit-scrollbar-thumb {
   background: #1a3c34;
   border-radius: 4px;
 }
 
 .money-manager-container.night-mode
-  .transactions-scroll-container::-webkit-scrollbar-thumb {
+  .transactions-table-container::-webkit-scrollbar-thumb {
   background: #00c9ff;
 }
 
-.transactions-scroll-container::-webkit-scrollbar-thumb:hover {
+.transactions-table-container::-webkit-scrollbar-thumb:hover {
   background: #15332d;
 }
 
 .money-manager-container.night-mode
-  .transactions-scroll-container::-webkit-scrollbar-thumb:hover {
+  .transactions-table-container::-webkit-scrollbar-thumb:hover {
   background: #0099cc;
 }
 
-.transactions-list {
+.transactions-table {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -530,66 +461,9 @@
   color: #1a1a1a;
 }
 
-.table-header span {
+.table-header-cell {
   flex: 1;
   text-align: center;
-}
-
-.transaction-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.transaction-item.night-mode {
-  background: rgba(40, 40, 40, 0.9);
-  color: #ffffff;
-  border-bottom: 1px solid #555555;
-}
-
-.transaction-item span {
-  flex: 1;
-  text-align: center;
-}
-
-.edit-field {
-  flex: 1;
-  padding: 5px;
-  margin: 0 5px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background: #f9f9f9;
-}
-
-.transaction-item.night-mode .edit-field {
-  background: #333333;
-  border-color: #555555;
-  color: #ffffff;
-}
-
-.edit-btn,
-.delete-btn,
-.save-btn,
-.cancel-btn {
-  cursor: pointer;
-  margin: 0 5px;
-  color: #1a3c34;
-}
-
-.transaction-item.night-mode .edit-btn,
-.transaction-item.night-mode .delete-btn,
-.transaction-item.night-mode .save-btn,
-.transaction-item.night-mode .cancel-btn {
-  color: #00c9ff;
-}
-
-.edit-btn:hover,
-.delete-btn:hover,
-.save-btn:hover,
-.cancel-btn:hover {
-  color: #00c9ff;
 }
 
 @media (max-width: 768px) {
@@ -616,11 +490,16 @@
     font-size: 24px;
   }
 
-  .main-content {
+  .transaction-details {
     flex-direction: column;
   }
 
-  .transactions-scroll-container {
+  .transaction-form,
+  .history-transactions {
+    min-width: 100%;
+  }
+
+  .transactions-table-container {
     max-height: 300px;
   }
 }
