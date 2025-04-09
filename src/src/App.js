@@ -1,9 +1,10 @@
-import { BrowserRouter, Route, Switch } from "react-router-dom";
+import { BrowserRouter, Route, Switch, Redirect } from "react-router-dom";
 
 import Login from "./components/Login";
 import Register from "./components/Register";
 import MoneyManager from "./components/MoneyManager";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Payment from "./components/Payment"; // Assuming you have or will create this
 
 import "./App.css";
 
@@ -13,9 +14,12 @@ const App = () => (
       <Route exact path="/login" component={Login} />
       <Route exact path="/register" component={Register} />
       <ProtectedRoute exact path="/" component={MoneyManager} />
+      <ProtectedRoute exact path="/payment/:data" component={Payment} />{" "}
+      {/* Added */}
+      <Route path="*" render={() => <Redirect to="/login" />} />{" "}
+      {/* Fallback */}
     </Switch>
   </BrowserRouter>
 );
-// const App = () => <MoneyManager />;
 
 export default App;

@@ -3,6 +3,8 @@ import { IoIosQrScanner } from "react-icons/io";
 import { MdDeleteForever } from "react-icons/md";
 import { IoIosLogOut } from "react-icons/io";
 import { FaCloudDownloadAlt } from "react-icons/fa";
+import { FaMoon, FaSun } from "react-icons/fa";
+import { withRouter } from "react-router-dom";
 import Cookies from "js-cookie";
 import axios from "axios";
 import QrScanner from "qr-scanner";
@@ -26,6 +28,7 @@ class MoneyManager extends Component {
     optionId: transactionTypeOptions[0].optionId,
     isScannerActive: false,
     scannerData: null,
+    isNightMode: false,
   };
 
   componentDidMount() {
@@ -52,6 +55,7 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error("Error fetching transactions:", error);
+        alert("Failed to fetch transactions. Please try again.");
       });
   };
 
@@ -70,7 +74,7 @@ class MoneyManager extends Component {
   handleScan = (result) => {
     if (result.data) {
       alert("QR Code Scanned: " + result.data);
-      this.props.history?.push(`/payment/${result.data}`);
+      this.props.history.push(`/payment/${result.data}`);
     }
   };
 
@@ -88,25 +92,17 @@ class MoneyManager extends Component {
     });
   };
 
-<<<<<<< HEAD
   toggleNightMode = () => {
     this.setState((prevState) => ({ isNightMode: !prevState.isNightMode }));
   };
 
-=======
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
   deleteTransaction = (transactionId) => {
     const { transactionsList } = this.state;
     axios
       .delete(`http://localhost:3001/transaction/${transactionId}`, {
         withCredentials: true,
       })
-<<<<<<< HEAD
-      .then((response) => {
-        console.log("Delete response:", response.data);
-=======
       .then(() => {
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
         const updatedTransactionList = transactionsList.filter(
           (eachTransaction) => eachTransaction.transactionId !== transactionId
         );
@@ -117,6 +113,7 @@ class MoneyManager extends Component {
           "Error deleting transaction:",
           error.response?.data?.message || error.message
         );
+        alert("Failed to delete transaction. Please try again.");
       });
   };
 
@@ -133,32 +130,23 @@ class MoneyManager extends Component {
           "Error clearing transactions:",
           error.response?.data?.message || error.message
         );
+        alert("Failed to clear transactions. Please try again.");
       });
   };
 
   updateTransaction = (transactionId, updatedTransaction) => {
-<<<<<<< HEAD
-    console.log(
-      "Updating transaction with ID:",
-      transactionId,
-      "Data:",
-      updatedTransaction
-    );
-=======
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
     axios
       .put(
         `http://localhost:3001/transaction/${transactionId}`,
         updatedTransaction,
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       )
       .then(() => {
         this.fetchTransactions();
       })
       .catch((error) => {
         console.error("Error updating transaction:", error);
+        alert("Failed to update transaction. Please try again.");
       });
   };
 
@@ -173,6 +161,7 @@ class MoneyManager extends Component {
 
     if (!userId) {
       console.error("User ID not found! Ensure the user is logged in.");
+      alert("Please log in to add a transaction.");
       return;
     }
 
@@ -197,6 +186,7 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error("Error adding transaction:", error);
+        alert("Failed to add transaction. Please try again.");
       });
   };
 
@@ -233,6 +223,7 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error("Logout failed", error);
+        alert("Logout failed. Please try again.");
       });
   };
 
@@ -243,13 +234,13 @@ class MoneyManager extends Component {
       optionId,
       transactionsList,
       isScannerActive,
+      isNightMode,
     } = this.state;
     const balanceAmount = this.getBalance();
     const incomeAmount = this.getIncome();
     const expensesAmount = this.getExpenses();
 
     return (
-<<<<<<< HEAD
       <div
         className={`money-manager-container ${
           isNightMode ? "night-mode" : ""
@@ -308,29 +299,8 @@ class MoneyManager extends Component {
             <p className="welcome-subtext">
               Welcome back to your{" "}
               <span className="money-manager-text">Money Manager</span>
-=======
-      <div className="app MDA-containers">
-        <div className="responsive-container1">
-          <div className="header-container1">
-            <h1 className="heading">Hi, BACHELORS</h1>
-            <p className="header-content">
-              Welcome back to your
-              <span className="money-manager-text"> Money Manager</span>
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
             </p>
           </div>
-          <FaCloudDownloadAlt
-            className="button5"
-            onClick={() =>
-              window.open("http://localhost:3001/generate-pdf", "_blank")
-            }
-          />
-          <MdDeleteForever
-            className="button5"
-            onClick={this.clearAllTransactions}
-          />
-          <IoIosQrScanner className="button5" onClick={this.toggleScanner} />
-          <IoIosLogOut className="button5" onClick={this.logout} />
 
           <MoneyDetails
             balanceAmount={balanceAmount}
@@ -339,7 +309,8 @@ class MoneyManager extends Component {
           />
           <div className="transaction-details">
             <form className="transaction-form" onSubmit={this.onAddTransaction}>
-              <h1 className="transaction-header">Add Transaction</h1>
+              <h1 className="transaction-header">Add Transaction</h1>{" "}
+              {/* Restored */}
               <label className="input-label" htmlFor="title">
                 TITLE
               </label>
@@ -348,7 +319,7 @@ class MoneyManager extends Component {
                 id="title"
                 value={titleInput}
                 onChange={this.onChangeTitleInput}
-                className="input"
+                className="input" /* Restored */
                 placeholder="TITLE"
               />
               <label className="input-label" htmlFor="amount">
@@ -357,7 +328,7 @@ class MoneyManager extends Component {
               <input
                 type="text"
                 id="amount"
-                className="input"
+                className="input" /* Restored */
                 value={amountInput}
                 onChange={this.onChangeAmountInput}
                 placeholder="AMOUNT"
@@ -367,29 +338,28 @@ class MoneyManager extends Component {
               </label>
               <select
                 id="select"
-                className="input"
+                className="input" /* Restored */
                 value={optionId}
-                onChange={this.onChangeOptionId}
-              >
+                onChange={this.onChangeOptionId}>
                 {transactionTypeOptions.map((eachOption) => (
                   <option key={eachOption.optionId} value={eachOption.optionId}>
                     {eachOption.displayText}
                   </option>
                 ))}
               </select>
-              <button type="submit" className="buttons">
+              <button type="submit" className="buttons" /* Restored */>
                 Add
               </button>
             </form>
 
             {isScannerActive && (
               <div className="scanner-container">
-                <video id="scanner-video" className="scanner" />
+                <video id="scanner-video" className="scanner" /* Restored */ />
               </div>
             )}
 
             <div className="history-transactions">
-              <h1 className="transaction-header">History</h1>
+              <h1 className="transaction-header">History</h1> {/* Restored */}
               <div className="transactions-table-container">
                 <ul className="transactions-table">
                   <li className="table-header">
@@ -400,13 +370,8 @@ class MoneyManager extends Component {
                   </li>
                   {transactionsList.map((eachTransaction) => (
                     <TransactionItem
-<<<<<<< HEAD
-                      key={transaction.transactionId}
-                      transactionDetails={transaction}
-=======
                       key={eachTransaction.transactionId}
                       transactionDetails={eachTransaction}
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
                       deleteTransaction={this.deleteTransaction}
                       updateTransaction={this.updateTransaction}
                     />
@@ -421,4 +386,4 @@ class MoneyManager extends Component {
   }
 }
 
-export default MoneyManager;
+export default withRouter(MoneyManager);

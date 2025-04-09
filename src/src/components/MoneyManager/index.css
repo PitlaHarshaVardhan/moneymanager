@@ -1,6 +1,5 @@
 .money-manager-container {
   min-height: 100vh;
-<<<<<<< HEAD
   display: flex;
   justify-content: center;
   align-items: center;
@@ -11,9 +10,6 @@
   transition: background 0.3s ease;
 }
 
-=======
-}
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
 .app-containers {
   display: flex;
   justify-content: center;
@@ -44,7 +40,6 @@
   transition: background 0.3s ease;
 }
 
-<<<<<<< HEAD
 @media screen and (min-width: 768px) {
   .header-container1 {
     align-items: flex-start;
@@ -52,8 +47,6 @@
   }
 }
 
-=======
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
 .money-manager-container::before {
   content: "";
   position: absolute;
@@ -110,15 +103,6 @@
   100% {
     opacity: 0.3;
     transform: scale(0.8);
-<<<<<<< HEAD
-=======
-  }
-}
-@media screen and (min-width: 768px) {
-  .header-container1 {
-    align-items: flex-start;
-    padding: 48px;
->>>>>>> b0d1ca8f52edf84e96223076c42407086a24f45a
   }
 }
 
