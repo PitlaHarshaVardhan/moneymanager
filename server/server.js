@@ -8,6 +8,7 @@ const { v4: uuidv4 } = require("uuid");
 const cron = require("node-cron");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
+const twilio = require("twilio");
 
 const app = express();
 
@@ -32,19 +33,26 @@ const client = new MongoClient(uri);
 
 let db;
 async function connectDB() {
-  console.log(
-    "Attempting to connect to MongoDB with URI:",
-    uri.replace(/:([^@]+)@/, ":****@")
-  ); // Hide password in logs
+  const maskedUri = uri.replace(/:([^@]+)@/, ":****@");
+  console.log("Attempting to connect to MongoDB with URI:", maskedUri);
   try {
     await client.connect();
     db = client.db("mydb");
     console.log("Connected to MongoDB Atlas successfully.");
   } catch (err) {
     console.error("Failed to connect to MongoDB:", err.message);
-    throw err; // Let the caller handle the error
+    setTimeout(connectDB, 5000); // Retry connection after 5 seconds
   }
 }
+connectDB();
+
+// Twilio Configuration (Add your Twilio credentials here)
+const accountSid =
+  process.env.TWILIO_ACCOUNT_SID || "AC411bf28b950c8808c30e6a40b0089bfd";
+const authToken =
+  process.env.TWILIO_AUTH_TOKEN || "14fcd31b270cf2c83a674b2ec9c4e820";
+const twilioClient = new twilio(accountSid, authToken);
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || "+12536428949";
 
 // Authentication Middleware
 const verifyToken = (req, res, next) => {
@@ -67,14 +75,16 @@ app.get("/", (req, res) => {
   res.status(200).send("Server is running!");
 });
 
-// **User Registration**
+// User Registration
 app.post("/register", async (req, res) => {
   console.log("Register request received:", req.body);
-  const { username, email, password } = req.body;
+  const { username, email, password, phone } = req.body;
 
-  if (!username || !email || !password) {
+  if (!username || !email || !password || !phone) {
     console.log("Validation failed: Missing fields");
-    return res.status(400).json({ error: "All fields are required" });
+    return res
+      .status(400)
+      .json({ error: "All fields are required including phone" });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -93,11 +103,12 @@ app.post("/register", async (req, res) => {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    console.log("Inserting new user:", { username, email });
+    console.log("Inserting new user:", { username, email, phone });
     await usersCollection.insertOne({
       username,
       email,
       password: hashedPassword,
+      phone,
     });
     console.log("User registered successfully");
     res.status(201).json({ message: "User registered successfully" });
@@ -107,7 +118,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// **User Login**
+// User Login
 app.post("/login", async (req, res) => {
   console.log("Login request received:", req.body);
   const { email, password } = req.body;
@@ -127,29 +138,28 @@ app.post("/login", async (req, res) => {
     const usersCollection = db.collection("users");
     const user = await usersCollection.findOne({ email });
 
-    if (!user) {
-      console.log("User not found:", email);
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      console.log("Invalid password for:", email);
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      console.log("User not found or invalid password:", email);
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const token = jwt.sign(
-      { userId: user._id.toString(), email: user.email },
+      { userId: user._id.toString(), email: user.email, phone: user.phone },
       "first_project_fullstack",
       { expiresIn: "1h" }
     );
 
-    res.cookie("jwt_token", token, { httpOnly: true, secure: false });
+    res.cookie("jwt_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
     console.log("Login successful for:", email);
     res.json({
       message: "Login successful",
       token,
       userId: user._id.toString(),
+      phone: user.phone,
     });
   } catch (err) {
     console.error("Login error:", err.message);
@@ -157,39 +167,42 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// **User Logout**
+// User Logout
 app.post("/logout", (req, res) => {
-  res.cookie("jwt_token", "", {
+  res.clearCookie("jwt_token", {
     httpOnly: true,
-    secure: false,
-    expires: new Date(0),
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
   });
+  console.log("Logout successful, cookie cleared");
   res.json({ message: "Logged out successfully" });
 });
 
-// **Get Transactions**
+// Get Transactions
 app.get("/transaction", verifyToken, async (req, res) => {
   const userId = req.user.userId;
-
   try {
     console.log("Fetching transactions for user:", userId);
     const transactionsCollection = db.collection("transaction");
     const transactions = await transactionsCollection
       .find({ userId })
       .toArray();
+    if (!transactions) transactions = [];
+    console.log("Transactions fetched:", transactions.length);
     res.json(transactions);
   } catch (err) {
     console.error("Error fetching transactions:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
 
-// **Create Transaction**
-app.post("/transaction", async (req, res) => {
+// Create Transaction
+app.post("/transaction", verifyToken, async (req, res) => {
   console.log("Transaction request received:", req.body);
-  const { title, amount, type, userId } = req.body;
+  const { title, amount, type } = req.body;
+  const userId = req.user.userId;
 
-  if (!title || !amount || !type || !userId) {
+  if (!title || !amount || !type) {
     console.log("Validation failed: Missing fields");
     return res.status(400).json({ error: "All fields are required" });
   }
@@ -199,7 +212,7 @@ app.post("/transaction", async (req, res) => {
 
   try {
     const transactionsCollection = db.collection("transaction");
-    const result = await transactionsCollection.insertOne({
+    await transactionsCollection.insertOne({
       transactionId,
       title,
       amount: parseInt(amount),
@@ -215,7 +228,7 @@ app.post("/transaction", async (req, res) => {
   }
 });
 
-// **Delete Transaction**
+// Delete Transaction
 app.delete("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const userId = req.user.userId;
@@ -228,25 +241,13 @@ app.delete("/transaction/:id", verifyToken, async (req, res) => {
   try {
     console.log("Attempting to delete transaction:", id, "for user:", userId);
     const transactionsCollection = db.collection("transaction");
-    const transaction = await transactionsCollection.findOne({
-      transactionId: id,
-      userId,
-    });
-    if (!transaction) {
-      console.log("Transaction not found in DB:", id, "for user:", userId);
-      return res
-        .status(404)
-        .json({ error: "Transaction not found or unauthorized" });
-    }
-
     const result = await transactionsCollection.deleteOne({
       transactionId: id,
       userId,
     });
 
-    console.log("Delete result:", result);
     if (result.deletedCount === 0) {
-      console.log("No transaction deleted:", id);
+      console.log("Transaction not found or unauthorized:", id);
       return res
         .status(404)
         .json({ error: "Transaction not found or unauthorized" });
@@ -260,7 +261,7 @@ app.delete("/transaction/:id", verifyToken, async (req, res) => {
   }
 });
 
-// **Clear Transactions**
+// Clear Transactions
 app.delete("/transactions/clear", verifyToken, async (req, res) => {
   const userId = req.user.userId;
 
@@ -282,40 +283,27 @@ app.delete("/transactions/clear", verifyToken, async (req, res) => {
   }
 });
 
-// **Update Transaction**
+// Update Transaction
 app.put("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const { title, amount, type } = req.body;
   const userId = req.user.userId;
 
   if (!title || !amount || !type) {
-    console.log("Validation failed: Missing fields", { title, amount, type });
+    console.log("Validation failed: Missing fields");
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
     console.log("Attempting to update transaction:", id, "for user:", userId);
-    console.log("Update data:", { title, amount: parseInt(amount), type });
     const transactionsCollection = db.collection("transaction");
-    const transaction = await transactionsCollection.findOne({
-      transactionId: id,
-      userId,
-    });
-    if (!transaction) {
-      console.log("Transaction not found in DB:", id, "for user:", userId);
-      return res
-        .status(404)
-        .json({ error: "Transaction not found or unauthorized" });
-    }
-
     const result = await transactionsCollection.updateOne(
       { transactionId: id, userId },
       { $set: { title, amount: parseInt(amount), type } }
     );
 
-    console.log("Update result:", result);
     if (result.matchedCount === 0) {
-      console.log("No transaction matched for update:", id);
+      console.log("Transaction not found or unauthorized:", id);
       return res
         .status(404)
         .json({ error: "Transaction not found or unauthorized" });
@@ -329,7 +317,74 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
   }
 });
 
-// **Cron Job: Month-End Balance**
+// QR Scan Payment
+app.post("/scan-payment", verifyToken, async (req, res) => {
+  const { qrData, amount } = req.body;
+  const userId = req.user.userId;
+  const recipientPhone = "7093065214"; // Replace with dynamic phone if needed
+
+  if (!qrData || !amount) {
+    console.log("Validation failed: Missing qrData or amount");
+    return res.status(400).json({ error: "Missing qrData or amount" });
+  }
+
+  const parsedAmount = parseInt(amount, 10);
+  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    console.log("Validation failed: Invalid amount");
+    return res.status(400).json({ error: "Invalid amount provided" });
+  }
+
+  try {
+    const urlParams = new URLSearchParams(qrData);
+    const payeeName = urlParams.get("pn") || "Pitla Harsha Vardhan";
+    const vpa = urlParams.get("pa") || "pitlavardhan@fifederal";
+    const currency = urlParams.get("cu") || "INR";
+
+    const transactionId = uuidv4();
+    const currentDate = new Date().toISOString().split("T")[0];
+
+    const transactionsCollection = db.collection("transaction");
+    await transactionsCollection.insertOne({
+      transactionId,
+      title: "QR Payment",
+      amount: parsedAmount,
+      type: "Expense",
+      date: currentDate,
+      userId,
+      status: "pending",
+      recipientPhone,
+      qrData,
+    });
+
+    const upiLink = `upi://pay?pa=${encodeURIComponent(
+      vpa
+    )}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(
+      parsedAmount.toFixed(2)
+    )}&cu=${encodeURIComponent(currency)}`;
+    const messageBody = `Payment Request: Pay ₹${parsedAmount} to ${payeeName}. Click here: ${upiLink} (Transaction ID: ${transactionId})`;
+
+    const message = await twilioClient.messages.create({
+      body: messageBody,
+      from: twilioPhoneNumber,
+      to: `+91${recipientPhone}`,
+    });
+
+    console.log("Payment request sent via SMS:", message.sid);
+    res.json({
+      message: "Payment request sent successfully",
+      transactionId,
+      upiLink,
+    });
+  } catch (err) {
+    console.error("Error processing QR payment:", err.message);
+    if (err.code === 21211 || err.code === 21610) {
+      return res.status(400).json({ error: `Twilio error: ${err.message}` });
+    }
+    res.status(500).json({ error: `Error processing payment: ${err.message}` });
+  }
+});
+
+// Cron Job: Month-End Balance
 cron.schedule("59 23 28-31 * *", async () => {
   console.log("Cron job running at month's end...");
   const currentMonth = new Date().getMonth() + 1;
@@ -343,14 +398,12 @@ cron.schedule("59 23 28-31 * *", async () => {
       const users = await usersCollection.find().toArray();
       for (const user of users) {
         const userId = user._id.toString();
-
         const income = await transactionsCollection
           .aggregate([
             { $match: { userId, type: "Income" } },
             { $group: { _id: null, total: { $sum: "$amount" } } },
           ])
           .toArray();
-
         const remainingIncome = income[0]?.total || 0;
 
         await transactionsCollection.insertOne({
@@ -361,7 +414,6 @@ cron.schedule("59 23 28-31 * *", async () => {
           date: new Date().toISOString().split("T")[0],
           userId,
         });
-
         await transactionsCollection.deleteMany({ userId, type: "Expenses" });
         console.log(`Monthly reset completed successfully for user ${userId}`);
       }
@@ -371,7 +423,7 @@ cron.schedule("59 23 28-31 * *", async () => {
   }
 });
 
-// **Generate PDF Report**
+// Generate PDF Report
 app.get("/generate-pdf", verifyToken, async (req, res) => {
   const userId = req.user.userId;
   const fileName = `Transaction_Report_${
@@ -388,7 +440,6 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
 
     const pdfDoc = new PDFDocument({ margin: 30, size: "A4" });
-    pdfDoc.pipe(fs.createWriteStream(fileName));
     pdfDoc.pipe(res);
 
     pdfDoc
@@ -442,26 +493,19 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
     console.log("PDF generated successfully for user:", userId);
   } catch (err) {
     console.error("Error generating PDF:", err.message);
-    res.status(500).json({ error: "Failed to fetch transactions" });
+    res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 
-// **Start Server**
+// Start Server
 async function startServer() {
   console.log("Starting server...");
   try {
     await connectDB(); // Wait for DB connection
-    console.log("Database connection established, starting Express server...");
-
-    app
-      .listen(port, "0.0.0.0", () => {
-        console.log(`Server running on port ${port}`);
-        console.log("Server is listening on all interfaces (0.0.0.0)");
-      })
-      .on("error", (err) => {
-        console.error("Server failed to start:", err.message);
-        process.exit(1);
-      });
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Server running on port ${port}`);
+      console.log("Server is listening on all interfaces (0.0.0.0)");
+    });
   } catch (err) {
     console.error("Error during server startup:", err.message);
     process.exit(1);

@@ -73,10 +73,54 @@ class MoneyManager extends Component {
     }
   };
 
-  handleScan = (result) => {
+  handleScan = async (result) => {
     if (result.data) {
-      alert("QR Code Scanned: " + result.data);
-      this.props.history.push(`/payment/${result.data}`);
+      console.log("Scanned QR Code Data:", result.data);
+      const amount = prompt("Enter payment amount in INR:");
+      if (!amount || isNaN(amount)) {
+        alert("Please enter a valid amount");
+        return;
+      }
+
+      const token = localStorage.getItem("token") || Cookies.get("jwt_token");
+      if (!token) {
+        console.error("No token available for scan");
+        this.checkAuth();
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "https://moneymanager-1-4fn4.onrender.com/scan-payment",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              qrData: result.data,
+              amount: parseInt(amount),
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Payment request sent:", data);
+          this.setState({ upiLink: data.upiLink });
+          this.fetchTransactions();
+          alert("Payment request processed successfully!");
+        } else {
+          const errorData = await response.json();
+          console.error("Failed to send payment request:", errorData);
+          alert(`Failed to process payment: ${errorData.error}`);
+        }
+      } catch (error) {
+        console.error("Error sending payment request:", error);
+        alert(`Error processing payment: ${error.message}`);
+      }
     }
   };
 
@@ -248,9 +292,8 @@ class MoneyManager extends Component {
 
     return (
       <div
-        className={`money-manager-container ${
-          isNightMode ? "night-mode" : ""
-        }`}>
+        className={`money-manager-container ${isNightMode ? "night-mode" : ""}`}
+      >
         <div className="money-manager-card">
           <div className="header-section">
             <div className="logo-container">
@@ -348,7 +391,8 @@ class MoneyManager extends Component {
                 id="select"
                 className="input"
                 value={optionId}
-                onChange={this.onChangeOptionId}>
+                onChange={this.onChangeOptionId}
+              >
                 {transactionTypeOptions.map((eachOption) => (
                   <option key={eachOption.optionId} value={eachOption.optionId}>
                     {eachOption.displayText}
