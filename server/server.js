@@ -32,13 +32,17 @@ const client = new MongoClient(uri);
 
 let db;
 async function connectDB() {
+  console.log(
+    "Attempting to connect to MongoDB with URI:",
+    uri.replace(/:([^@]+)@/, ":****@")
+  ); // Hide password in logs
   try {
     await client.connect();
     db = client.db("mydb");
     console.log("Connected to MongoDB Atlas successfully.");
   } catch (err) {
-    console.error("Failed to connect to MongoDB:", err);
-    process.exit(1); // Exit if DB connection fails
+    console.error("Failed to connect to MongoDB:", err.message);
+    throw err; // Let the caller handle the error
   }
 }
 
@@ -49,7 +53,7 @@ const verifyToken = (req, res, next) => {
 
   jwt.verify(token, "first_project_fullstack", (err, decoded) => {
     if (err) {
-      console.error("Token verification failed:", err);
+      console.error("Token verification failed:", err.message);
       return res.status(401).json({ error: "Unauthorized, Invalid Token" });
     }
     req.user = decoded;
@@ -59,6 +63,7 @@ const verifyToken = (req, res, next) => {
 
 // Basic root route for testing
 app.get("/", (req, res) => {
+  console.log("Received GET request to root route.");
   res.status(200).send("Server is running!");
 });
 
@@ -97,7 +102,7 @@ app.post("/register", async (req, res) => {
     console.log("User registered successfully");
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
-    console.error("Registration error:", err);
+    console.error("Registration error:", err.message);
     res.status(500).json({ error: `Registration failed: ${err.message}` });
   }
 });
@@ -147,7 +152,7 @@ app.post("/login", async (req, res) => {
       userId: user._id.toString(),
     });
   } catch (err) {
-    console.error("Login error:", err);
+    console.error("Login error:", err.message);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -174,7 +179,7 @@ app.get("/transaction", verifyToken, async (req, res) => {
       .toArray();
     res.json(transactions);
   } catch (err) {
-    console.error("Error fetching transactions:", err);
+    console.error("Error fetching transactions:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -205,7 +210,7 @@ app.post("/transaction", async (req, res) => {
     console.log("Transaction inserted successfully:", transactionId);
     res.json({ message: "Transaction added successfully", transactionId });
   } catch (err) {
-    console.error("Error inserting transaction:", err);
+    console.error("Error inserting transaction:", err.message);
     res.status(500).json({ error: "Database error" });
   }
 });
@@ -250,7 +255,7 @@ app.delete("/transaction/:id", verifyToken, async (req, res) => {
     console.log("Transaction deleted successfully:", id);
     res.status(200).json({ message: `Transaction with ID ${id} deleted` });
   } catch (err) {
-    console.error("Error deleting transaction:", err);
+    console.error("Error deleting transaction:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -272,7 +277,7 @@ app.delete("/transactions/clear", verifyToken, async (req, res) => {
     console.log("All transactions cleared for user:", userId);
     res.status(200).json({ message: "All transactions cleared successfully" });
   } catch (err) {
-    console.error("Error clearing transactions:", err);
+    console.error("Error clearing transactions:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -319,7 +324,7 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
     console.log("Transaction updated successfully:", id);
     res.json({ message: "Transaction updated successfully" });
   } catch (err) {
-    console.error("Error updating transaction:", err);
+    console.error("Error updating transaction:", err.message);
     res.status(500).json({ error: "Error updating transaction" });
   }
 });
@@ -361,7 +366,7 @@ cron.schedule("59 23 28-31 * *", async () => {
         console.log(`Monthly reset completed successfully for user ${userId}`);
       }
     } catch (err) {
-      console.error("Cron job error:", err);
+      console.error("Cron job error:", err.message);
     }
   }
 });
@@ -436,26 +441,31 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
     pdfDoc.end();
     console.log("PDF generated successfully for user:", userId);
   } catch (err) {
-    console.error("Error generating PDF:", err);
+    console.error("Error generating PDF:", err.message);
     res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
 
 // **Start Server**
 async function startServer() {
-  await connectDB(); // Wait for DB connection before starting server
+  console.log("Starting server...");
+  try {
+    await connectDB(); // Wait for DB connection
+    console.log("Database connection established, starting Express server...");
 
-  app
-    .listen(port, "0.0.0.0", () => {
-      console.log(`Server running on port ${port}`);
-      console.log("Server is listening on all interfaces (0.0.0.0)");
-    })
-    .on("error", (err) => {
-      console.error("Server failed to start:", err);
-    });
+    app
+      .listen(port, "0.0.0.0", () => {
+        console.log(`Server running on port ${port}`);
+        console.log("Server is listening on all interfaces (0.0.0.0)");
+      })
+      .on("error", (err) => {
+        console.error("Server failed to start:", err.message);
+        process.exit(1);
+      });
+  } catch (err) {
+    console.error("Error during server startup:", err.message);
+    process.exit(1);
+  }
 }
 
-startServer().catch((err) => {
-  console.error("Error starting server:", err);
-  process.exit(1);
-});
+startServer();
