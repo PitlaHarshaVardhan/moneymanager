@@ -49,7 +49,7 @@ class MoneyManager extends Component {
 
   fetchTransactions = () => {
     axios
-      .get("https://moneymanager-1k8t.onrender.com/transaction", {
+      .get(`${process.env.REACT_APP_API_URL}/transaction`, {
         withCredentials: true,
       })
       .then((response) => {
@@ -101,12 +101,9 @@ class MoneyManager extends Component {
   deleteTransaction = (transactionId) => {
     const { transactionsList } = this.state;
     axios
-      .delete(
-        `https://moneymanager-1k8t.onrender.com/transaction/${transactionId}`,
-        {
-          withCredentials: true,
-        }
-      )
+      .delete(`${process.env.REACT_APP_API_URL}/transaction/${transactionId}`, {
+        withCredentials: true,
+      })
       .then(() => {
         const updatedTransactionList = transactionsList.filter(
           (eachTransaction) => eachTransaction.transactionId !== transactionId
@@ -124,7 +121,7 @@ class MoneyManager extends Component {
 
   clearAllTransactions = () => {
     axios
-      .delete("https://moneymanager-1k8t.onrender.com/transactions/clear", {
+      .delete(`${process.env.REACT_APP_API_URL}/transactions/clear`, {
         withCredentials: true,
       })
       .then(() => {
@@ -142,7 +139,7 @@ class MoneyManager extends Component {
   updateTransaction = (transactionId, updatedTransaction) => {
     axios
       .put(
-        `https://moneymanager-1k8t.onrender.com/transaction/${transactionId}`,
+        `${process.env.REACT_APP_API_URL}/transaction/${transactionId}`,
         updatedTransaction,
         { withCredentials: true }
       )
@@ -172,7 +169,7 @@ class MoneyManager extends Component {
 
     axios
       .post(
-        "https://moneymanager-1k8t.onrender.com/transaction",
+        `${process.env.REACT_APP_API_URL}/transaction`,
         {
           title: titleInput,
           amount: parseInt(amountInput),
@@ -222,7 +219,7 @@ class MoneyManager extends Component {
   logout = () => {
     axios
       .post(
-        "https://moneymanager-1k8t.onrender.com/logout",
+        `${process.env.REACT_APP_API_URL}/logout`,
         {},
         { withCredentials: true }
       )
@@ -269,7 +266,7 @@ class MoneyManager extends Component {
                 className="icon-btn"
                 onClick={() =>
                   window.open(
-                    "https://moneymanager-1k8t.onrender.com/generate-pdf",
+                    `${process.env.REACT_APP_API_URL}/generate-pdf`,
                     "_blank"
                   )
                 }
