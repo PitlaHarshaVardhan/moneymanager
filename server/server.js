@@ -35,13 +35,12 @@ async function connectDB() {
   try {
     await client.connect();
     db = client.db("mydb");
-    console.log("Connected to MongoDB Atlas.");
+    console.log("Connected to MongoDB Atlas successfully.");
   } catch (err) {
-    console.error("Database connection error:", err);
-    process.exit(1);
+    console.error("Failed to connect to MongoDB:", err);
+    process.exit(1); // Exit if DB connection fails
   }
 }
-connectDB();
 
 // Authentication Middleware
 const verifyToken = (req, res, next) => {
@@ -57,6 +56,11 @@ const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+// Basic root route for testing
+app.get("/", (req, res) => {
+  res.status(200).send("Server is running!");
+});
 
 // **User Registration**
 app.post("/register", async (req, res) => {
@@ -438,12 +442,20 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
 });
 
 // **Start Server**
-// Replace the app.listen part at the bottom of server.js with this
-app
-  .listen(port, "0.0.0.0", () => {
-    console.log(`Server running on port ${port}`);
-    console.log("Server is listening on all interfaces (0.0.0.0)");
-  })
-  .on("error", (err) => {
-    console.error("Server failed to start:", err);
-  });
+async function startServer() {
+  await connectDB(); // Wait for DB connection before starting server
+
+  app
+    .listen(port, "0.0.0.0", () => {
+      console.log(`Server running on port ${port}`);
+      console.log("Server is listening on all interfaces (0.0.0.0)");
+    })
+    .on("error", (err) => {
+      console.error("Server failed to start:", err);
+    });
+}
+
+startServer().catch((err) => {
+  console.error("Error starting server:", err);
+  process.exit(1);
+});
