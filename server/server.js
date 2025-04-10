@@ -26,6 +26,7 @@ app.use(cookieParser());
 
 // MongoDB Atlas Connection
 const uri =
+  process.env.MONGO_URI ||
   "mongodb+srv://sriramkomma2443:Lowda12345@mydb-cluster.46hwdk7.mongodb.net/?retryWrites=true&w=majority&appName=mydb-cluster";
 const client = new MongoClient(uri);
 
@@ -437,6 +438,12 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
 });
 
 // **Start Server**
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Server running on port ${port}`);
-});
+// Replace the app.listen part at the bottom of server.js with this
+app
+  .listen(port, "0.0.0.0", () => {
+    console.log(`Server running on port ${port}`);
+    console.log("Server is listening on all interfaces (0.0.0.0)");
+  })
+  .on("error", (err) => {
+    console.error("Server failed to start:", err);
+  });
