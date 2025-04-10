@@ -32,27 +32,46 @@ const uri =
 const client = new MongoClient(uri);
 
 let db;
+let retryCount = 0;
+const maxRetries = 5;
 async function connectDB() {
   const maskedUri = uri.replace(/:([^@]+)@/, ":****@");
-  console.log("Attempting to connect to MongoDB with URI:", maskedUri);
+  console.log(
+    `Attempting to connect to MongoDB with URI: ${maskedUri}, Retry ${
+      retryCount + 1
+    }/${maxRetries}`
+  );
   try {
     await client.connect();
     db = client.db("mydb");
     console.log("Connected to MongoDB Atlas successfully.");
+    retryCount = 0; // Reset retry count on success
   } catch (err) {
     console.error("Failed to connect to MongoDB:", err.message);
-    setTimeout(connectDB, 5000); // Retry connection after 5 seconds
+    if (retryCount < maxRetries) {
+      retryCount++;
+      setTimeout(connectDB, 5000); // Retry after 5 seconds
+    } else {
+      console.error("Max retry attempts reached. Shutting down.");
+      process.exit(1);
+    }
   }
 }
 connectDB();
 
-// Twilio Configuration (Add your Twilio credentials here)
-const accountSid =
-  process.env.TWILIO_ACCOUNT_SID || "AC411bf28b950c8808c30e6a40b0089bfd";
-const authToken =
-  process.env.TWILIO_AUTH_TOKEN || "14fcd31b270cf2c83a674b2ec9c4e820";
+// Twilio Configuration (Use environment variables only)
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+if (!accountSid || !authToken || !twilioPhoneNumber) {
+  console.error(
+    "Missing required environment variables: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER"
+  );
+  process.exit(1);
+}
+
 const twilioClient = new twilio(accountSid, authToken);
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || "+12536428949";
 
 // Authentication Middleware
 const verifyToken = (req, res, next) => {
@@ -319,13 +338,14 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
 
 // QR Scan Payment
 app.post("/scan-payment", verifyToken, async (req, res) => {
-  const { qrData, amount } = req.body;
+  const { qrData, amount, recipientPhone } = req.body; // Allow dynamic recipient phone
   const userId = req.user.userId;
-  const recipientPhone = "7093065214"; // Replace with dynamic phone if needed
 
-  if (!qrData || !amount) {
-    console.log("Validation failed: Missing qrData or amount");
-    return res.status(400).json({ error: "Missing qrData or amount" });
+  if (!qrData || !amount || !recipientPhone) {
+    console.log("Validation failed: Missing qrData, amount, or recipientPhone");
+    return res
+      .status(400)
+      .json({ error: "Missing qrData, amount, or recipientPhone" });
   }
 
   const parsedAmount = parseInt(amount, 10);
@@ -366,7 +386,7 @@ app.post("/scan-payment", verifyToken, async (req, res) => {
     const message = await twilioClient.messages.create({
       body: messageBody,
       from: twilioPhoneNumber,
-      to: `+91${recipientPhone}`,
+      to: `+91${recipientPhone.replace(/^0/, "")}`, // Ensure proper phone format
     });
 
     console.log("Payment request sent via SMS:", message.sid);
