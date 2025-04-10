@@ -5,9 +5,10 @@
   "scripts": {
     "install:all": "npm install && cd server && npm install",
     "build": "react-scripts build",
-    "start": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "start": "node server/server.js",
     "frontend": "react-scripts start",
     "backend": "cd server && npm start",
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
     "test": "react-scripts test"
   },
   "dependencies": {

@@ -429,13 +429,12 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
   }
 });
 
-// **Update Transaction**
+// **Update Transaction (Duplicate Removed)**
 app.put("/transaction/:id", verifyToken, async (req, res) => {
   const { id } = req.params;
   const { title, amount, type } = req.body;
   const userId = req.user.userId;
-  // console.log(id);
-  // console.log(userId);
+
   if (!title || !amount || !type) {
     console.log("Validation failed: Missing fields");
     return res.status(400).json({ error: "All fields are required" });
@@ -461,6 +460,7 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Error updating transaction" });
   }
 });
+
 // **Start Server**
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

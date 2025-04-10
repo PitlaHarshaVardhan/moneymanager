@@ -49,7 +49,9 @@ class MoneyManager extends Component {
 
   fetchTransactions = () => {
     axios
-      .get("http://localhost:3001/transaction", { withCredentials: true })
+      .get("https://moneymanager-1k8t.onrender.com/transaction", {
+        withCredentials: true,
+      })
       .then((response) => {
         this.setState({ transactionsList: response.data });
       })
@@ -99,9 +101,12 @@ class MoneyManager extends Component {
   deleteTransaction = (transactionId) => {
     const { transactionsList } = this.state;
     axios
-      .delete(`http://localhost:3001/transaction/${transactionId}`, {
-        withCredentials: true,
-      })
+      .delete(
+        `https://moneymanager-1k8t.onrender.com/transaction/${transactionId}`,
+        {
+          withCredentials: true,
+        }
+      )
       .then(() => {
         const updatedTransactionList = transactionsList.filter(
           (eachTransaction) => eachTransaction.transactionId !== transactionId
@@ -119,7 +124,7 @@ class MoneyManager extends Component {
 
   clearAllTransactions = () => {
     axios
-      .delete("http://localhost:3001/transactions/clear", {
+      .delete("https://moneymanager-1k8t.onrender.com/transactions/clear", {
         withCredentials: true,
       })
       .then(() => {
@@ -137,7 +142,7 @@ class MoneyManager extends Component {
   updateTransaction = (transactionId, updatedTransaction) => {
     axios
       .put(
-        `http://localhost:3001/transaction/${transactionId}`,
+        `https://moneymanager-1k8t.onrender.com/transaction/${transactionId}`,
         updatedTransaction,
         { withCredentials: true }
       )
@@ -167,7 +172,7 @@ class MoneyManager extends Component {
 
     axios
       .post(
-        "http://localhost:3001/transaction",
+        "https://moneymanager-1k8t.onrender.com/transaction",
         {
           title: titleInput,
           amount: parseInt(amountInput),
@@ -216,7 +221,11 @@ class MoneyManager extends Component {
 
   logout = () => {
     axios
-      .post("http://localhost:3001/logout", {}, { withCredentials: true })
+      .post(
+        "https://moneymanager-1k8t.onrender.com/logout",
+        {},
+        { withCredentials: true }
+      )
       .then(() => {
         Cookies.remove("jwt_token");
         window.location.href = "/login";
@@ -259,7 +268,10 @@ class MoneyManager extends Component {
               <FaCloudDownloadAlt
                 className="icon-btn"
                 onClick={() =>
-                  window.open("http://localhost:3001/generate-pdf", "_blank")
+                  window.open(
+                    "https://moneymanager-1k8t.onrender.com/generate-pdf",
+                    "_blank"
+                  )
                 }
                 title="Download Report"
               />
@@ -309,8 +321,7 @@ class MoneyManager extends Component {
           />
           <div className="transaction-details">
             <form className="transaction-form" onSubmit={this.onAddTransaction}>
-              <h1 className="transaction-header">Add Transaction</h1>{" "}
-              {/* Restored */}
+              <h1 className="transaction-header">Add Transaction</h1>
               <label className="input-label" htmlFor="title">
                 TITLE
               </label>
@@ -319,7 +330,7 @@ class MoneyManager extends Component {
                 id="title"
                 value={titleInput}
                 onChange={this.onChangeTitleInput}
-                className="input" /* Restored */
+                className="input"
                 placeholder="TITLE"
               />
               <label className="input-label" htmlFor="amount">
@@ -328,7 +339,7 @@ class MoneyManager extends Component {
               <input
                 type="text"
                 id="amount"
-                className="input" /* Restored */
+                className="input"
                 value={amountInput}
                 onChange={this.onChangeAmountInput}
                 placeholder="AMOUNT"
@@ -338,7 +349,7 @@ class MoneyManager extends Component {
               </label>
               <select
                 id="select"
-                className="input" /* Restored */
+                className="input"
                 value={optionId}
                 onChange={this.onChangeOptionId}>
                 {transactionTypeOptions.map((eachOption) => (
@@ -347,19 +358,19 @@ class MoneyManager extends Component {
                   </option>
                 ))}
               </select>
-              <button type="submit" className="buttons" /* Restored */>
+              <button type="submit" className="buttons">
                 Add
               </button>
             </form>
 
             {isScannerActive && (
               <div className="scanner-container">
-                <video id="scanner-video" className="scanner" /* Restored */ />
+                <video id="scanner-video" className="scanner" />
               </div>
             )}
 
             <div className="history-transactions">
-              <h1 className="transaction-header">History</h1> {/* Restored */}
+              <h1 className="transaction-header">History</h1>
               <div className="transactions-table-container">
                 <ul className="transactions-table">
                   <li className="table-header">
