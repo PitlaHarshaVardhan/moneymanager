@@ -1,7 +1,7 @@
 {
-  "name": "server",
+  "name": "moneymanager-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,15 +9,16 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Backend for MoneyManager application",
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
     "express": "^4.21.1",
-    "mysql2": "^3.14.0",
+    "mongodb": "^6.8.0",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cookie-parser": "^1.4.6",
+    "uuid": "^10.0.0",
     "node-cron": "^3.0.3",
-    "pdfkit": "^0.16.0",
-    "react-icons": "^5.5.0",
-    "server": "file:"
+    "pdfkit": "^0.16.0"
   }
 }
