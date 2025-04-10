@@ -10,10 +10,17 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 
 const app = express();
-const port = 3001;
+
+// Use the PORT environment variable provided by Render, default to 3001 for local development
+const port = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(
+  cors({
+    origin: "https://your-frontend-url.onrender.com", // Replace with your actual deployed frontend URL
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -429,39 +436,7 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
   }
 });
 
-// **Update Transaction (Duplicate Removed)**
-app.put("/transaction/:id", verifyToken, async (req, res) => {
-  const { id } = req.params;
-  const { title, amount, type } = req.body;
-  const userId = req.user.userId;
-
-  if (!title || !amount || !type) {
-    console.log("Validation failed: Missing fields");
-    return res.status(400).json({ error: "All fields are required" });
-  }
-
-  try {
-    console.log("Updating transaction:", id, "for user:", userId);
-    const transactionsCollection = db.collection("transaction");
-    const result = await transactionsCollection.updateOne(
-      { transactionId: id, userId },
-      { $set: { title, amount, type } }
-    );
-
-    if (result.matchedCount === 0) {
-      console.log("Transaction not found:", id);
-      return res.status(404).json({ error: "Transaction not found" });
-    }
-
-    console.log("Transaction updated successfully:", id);
-    res.json({ message: "Transaction updated successfully" });
-  } catch (err) {
-    console.error("Error updating transaction:", err);
-    res.status(500).json({ error: "Error updating transaction" });
-  }
-});
-
 // **Start Server**
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });
