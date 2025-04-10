@@ -10,14 +10,12 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 
 const app = express();
-
-// Use the PORT environment variable provided by Render, default to 3001 for local development
 const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(
   cors({
-    origin: "https://moneymanager-1-4fn4.onrender.com", // Replace with your actual deployed frontend URL
+    origin: "https://moneymanager-frontend.onrender.com", // Updated to your frontend URL
     credentials: true,
   })
 );
@@ -35,14 +33,14 @@ async function connectDB() {
   console.log(
     "Attempting to connect to MongoDB with URI:",
     uri.replace(/:([^@]+)@/, ":****@")
-  ); // Hide password in logs
+  );
   try {
     await client.connect();
     db = client.db("mydb");
     console.log("Connected to MongoDB Atlas successfully.");
   } catch (err) {
     console.error("Failed to connect to MongoDB:", err.message);
-    throw err; // Let the caller handle the error
+    throw err;
   }
 }
 
@@ -61,7 +59,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Basic root route for testing
+// Basic root route
 app.get("/", (req, res) => {
   console.log("Received GET request to root route.");
   res.status(200).send("Server is running!");
@@ -144,7 +142,7 @@ app.post("/login", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.cookie("jwt_token", token, { httpOnly: true, secure: false });
+    res.cookie("jwt_token", token, { httpOnly: true, secure: true }); // Secure: true for HTTPS
     console.log("Login successful for:", email);
     res.json({
       message: "Login successful",
@@ -161,16 +159,15 @@ app.post("/login", async (req, res) => {
 app.post("/logout", (req, res) => {
   res.cookie("jwt_token", "", {
     httpOnly: true,
-    secure: false,
+    secure: true,
     expires: new Date(0),
   });
   res.json({ message: "Logged out successfully" });
 });
 
-// **Get Transactions**
+// **Get Transactions (Singular and Plural)**
 app.get("/transaction", verifyToken, async (req, res) => {
   const userId = req.user.userId;
-
   try {
     console.log("Fetching transactions for user:", userId);
     const transactionsCollection = db.collection("transaction");
@@ -184,7 +181,22 @@ app.get("/transaction", verifyToken, async (req, res) => {
   }
 });
 
-// **Create Transaction**
+app.get("/transactions", verifyToken, async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    console.log("Fetching transactions for user (plural):", userId);
+    const transactionsCollection = db.collection("transaction");
+    const transactions = await transactionsCollection
+      .find({ userId })
+      .toArray();
+    res.json(transactions);
+  } catch (err) {
+    console.error("Error fetching transactions (plural):", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// **Create Transaction (Singular and Plural)**
 app.post("/transaction", async (req, res) => {
   console.log("Transaction request received:", req.body);
   const { title, amount, type, userId } = req.body;
@@ -211,6 +223,36 @@ app.post("/transaction", async (req, res) => {
     res.json({ message: "Transaction added successfully", transactionId });
   } catch (err) {
     console.error("Error inserting transaction:", err.message);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.post("/transactions", async (req, res) => {
+  console.log("Transactions (plural) request received:", req.body);
+  const { title, amount, type, userId } = req.body;
+
+  if (!title || !amount || !type || !userId) {
+    console.log("Validation failed: Missing fields");
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const transactionId = uuidv4();
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  try {
+    const transactionsCollection = db.collection("transaction");
+    const result = await transactionsCollection.insertOne({
+      transactionId,
+      title,
+      amount: parseInt(amount),
+      type,
+      date: currentDate,
+      userId,
+    });
+    console.log("Transaction inserted successfully (plural):", transactionId);
+    res.json({ message: "Transaction added successfully", transactionId });
+  } catch (err) {
+    console.error("Error inserting transaction (plural):", err.message);
     res.status(500).json({ error: "Database error" });
   }
 });
@@ -450,7 +492,7 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
 async function startServer() {
   console.log("Starting server...");
   try {
-    await connectDB(); // Wait for DB connection
+    await connectDB();
     console.log("Database connection established, starting Express server...");
 
     app
