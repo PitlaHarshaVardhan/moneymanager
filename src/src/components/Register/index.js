@@ -49,7 +49,7 @@ class Register extends Component {
     }
 
     const userDetails = { username, email, password };
-    const url = "http://localhost:3001/register";
+    const url = `${process.env.REACT_APP_API_URL}/register`;
     const options = {
       method: "POST",
       headers: {

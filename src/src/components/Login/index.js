@@ -46,7 +46,7 @@ class Login extends Component {
     }
 
     const userDetails = { email, password };
-    const url = "http://localhost:3001/login";
+    const url = `${process.env.REACT_APP_API_URL}/login`;
     const options = {
       method: "POST",
       headers: {
