@@ -15,7 +15,7 @@ const port = process.env.PORT || 3001;
 // Middleware
 app.use(
   cors({
-    origin: "https://moneymanager-frontend.onrender.com", // Updated to your frontend URL
+    origin: "https://moneymanager-frontend.onrender.com", // Your frontend URL
     credentials: true,
   })
 );
@@ -59,7 +59,13 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Basic root route
+// Test Route for Debugging
+app.get("/test", (req, res) => {
+  console.log("Test route hit!");
+  res.send("Test route working!");
+});
+
+// Basic Root Route
 app.get("/", (req, res) => {
   console.log("Received GET request to root route.");
   res.status(200).send("Server is running!");
@@ -142,7 +148,7 @@ app.post("/login", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.cookie("jwt_token", token, { httpOnly: true, secure: true }); // Secure: true for HTTPS
+    res.cookie("jwt_token", token, { httpOnly: true, secure: true });
     console.log("Login successful for:", email);
     res.json({
       message: "Login successful",
