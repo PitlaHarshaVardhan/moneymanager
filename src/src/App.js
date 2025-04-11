@@ -4,8 +4,8 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import MoneyManager from "./components/MoneyManager";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Payment from "./components/Payment"; // Assuming you have or will create this
-import NotFound from "./components/NotFound";
+import Payment from "./components/Payment"; // Assuming this exists
+import NotFound from "./components/NotFound"; // Already imported in your original
 import "./App.css";
 
 const App = () => (
@@ -15,9 +15,9 @@ const App = () => (
       <Route exact path="/register" component={Register} />
       <ProtectedRoute exact path="/" component={MoneyManager} />
       <ProtectedRoute exact path="/payment/:data" component={Payment} />
-      <Route path="/not-found" component={NotFound} />
-      <Redirect to="not-found" />
-      <Route path="*" render={() => <Redirect to="/login" />} />
+      <Route exact path="/not-found" component={NotFound} />
+      {/* Redirect any unmatched routes to /not-found */}
+      <Redirect from="*" to="/not-found" />
     </Switch>
   </BrowserRouter>
 );
