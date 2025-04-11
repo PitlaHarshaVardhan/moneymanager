@@ -19,6 +19,7 @@
     "cookie-parser": "^1.4.6",
     "uuid": "^10.0.0",
     "node-cron": "^3.0.3",
-    "pdfkit": "^0.16.0"
+    "pdfkit": "^0.16.0",
+    "twilio": "^5.0.0"
   }
 }
