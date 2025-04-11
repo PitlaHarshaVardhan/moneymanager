@@ -15,7 +15,7 @@ const port = process.env.PORT || 3001;
 // Middleware
 app.use(
   cors({
-    origin: "https://moneymanager-frontend.onrender.com", // Your frontend URL
+    origin: "https://moneymanager-1-4fn4.onrender.com/", // Your frontend URL
     credentials: true,
   })
 );
