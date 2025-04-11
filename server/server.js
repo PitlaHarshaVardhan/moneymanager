@@ -16,12 +16,17 @@ const port = process.env.PORT || 3001;
 // Middleware
 app.use(
   cors({
-    origin: "https://moneymanager-1-4fn4.onrender.com", // Match frontend URL without trailing slash
+    origin: "https://moneymanager-1-4fn4.onrender.com", // Frontend URL
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allow all methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
   })
 );
 app.use(express.json());
 app.use(cookieParser());
+
+// Handle preflight requests
+app.options("*", cors());
 
 // MongoDB Atlas Connection
 const uri =
@@ -43,12 +48,12 @@ async function connectDB() {
     await client.connect();
     db = client.db("mydb");
     console.log("Connected to MongoDB Atlas successfully.");
-    retryCount = 0; // Reset retry count on success
+    retryCount = 0;
   } catch (err) {
     console.error("Failed to connect to MongoDB:", err.message);
     if (retryCount < maxRetries) {
       retryCount++;
-      setTimeout(connectDB, 5000); // Retry after 5 seconds
+      setTimeout(connectDB, 5000);
     } else {
       console.error("Max retry attempts reached. Shutting down.");
       process.exit(1);
@@ -63,9 +68,7 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 if (!accountSid || !authToken || !twilioPhoneNumber) {
-  console.error(
-    "Missing required environment variables: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, or TWILIO_PHONE_NUMBER"
-  );
+  console.error("Missing Twilio environment variables");
   process.exit(1);
 }
 
@@ -92,7 +95,7 @@ app.get("/test", (req, res) => {
   res.send("Test route working!");
 });
 
-// Basic Root Route
+// Root Route
 app.get("/", (req, res) => {
   console.log("Received GET request to root route.");
   res.status(200).send("Server is running!");
@@ -174,7 +177,7 @@ app.post("/login", async (req, res) => {
 
     res.cookie("jwt_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true, // Always true for HTTPS
       sameSite: "lax",
     });
     console.log("Login successful for:", email);
@@ -194,7 +197,7 @@ app.post("/login", async (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("jwt_token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "lax",
   });
   console.log("Logout successful, cookie cleared");
@@ -210,27 +213,11 @@ app.get("/transaction", verifyToken, async (req, res) => {
     const transactions = await transactionsCollection
       .find({ userId })
       .toArray();
-    if (!transactions) transactions = [];
     console.log("Transactions fetched:", transactions.length);
     res.json(transactions);
   } catch (err) {
     console.error("Error fetching transactions:", err.message);
     res.status(500).json({ error: "Failed to fetch transactions" });
-  }
-});
-
-app.get("/transactions", verifyToken, async (req, res) => {
-  const userId = req.user.userId;
-  try {
-    console.log("Fetching transactions for user (plural):", userId);
-    const transactionsCollection = db.collection("transaction");
-    const transactions = await transactionsCollection
-      .find({ userId })
-      .toArray();
-    res.json(transactions);
-  } catch (err) {
-    console.error("Error fetching transactions (plural):", err.message);
-    res.status(500).json({ error: err.message });
   }
 });
 
@@ -262,37 +249,6 @@ app.post("/transaction", verifyToken, async (req, res) => {
     res.json({ message: "Transaction added successfully", transactionId });
   } catch (err) {
     console.error("Error inserting transaction:", err.message);
-    res.status(500).json({ error: "Database error" });
-  }
-});
-
-app.post("/transactions", verifyToken, async (req, res) => {
-  console.log("Transactions (plural) request received:", req.body);
-  const { title, amount, type } = req.body;
-  const userId = req.user.userId;
-
-  if (!title || !amount || !type) {
-    console.log("Validation failed: Missing fields");
-    return res.status(400).json({ error: "All fields are required" });
-  }
-
-  const transactionId = uuidv4();
-  const currentDate = new Date().toISOString().split("T")[0];
-
-  try {
-    const transactionsCollection = db.collection("transaction");
-    const result = await transactionsCollection.insertOne({
-      transactionId,
-      title,
-      amount: parseInt(amount),
-      type,
-      date: currentDate,
-      userId,
-    });
-    console.log("Transaction inserted successfully (plural):", transactionId);
-    res.json({ message: "Transaction added successfully", transactionId });
-  } catch (err) {
-    console.error("Error inserting transaction (plural):", err.message);
     res.status(500).json({ error: "Database error" });
   }
 });
@@ -436,7 +392,7 @@ app.post("/scan-payment", verifyToken, async (req, res) => {
     const message = await twilioClient.messages.create({
       body: messageBody,
       from: twilioPhoneNumber,
-      to: `+91${recipientPhone.replace(/^0/, "")}`, // Ensure proper phone format
+      to: `+91${recipientPhone.replace(/^0/, "")}`,
     });
 
     console.log("Payment request sent via SMS:", message.sid);
@@ -571,7 +527,7 @@ app.get("/generate-pdf", verifyToken, async (req, res) => {
 async function startServer() {
   console.log("Starting server...");
   try {
-    await connectDB(); // Wait for DB connection
+    await connectDB();
     app
       .listen(port, "0.0.0.0", () => {
         console.log(`Server running on port ${port}`);
