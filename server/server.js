@@ -16,10 +16,10 @@ const port = process.env.PORT || 3001;
 // Middleware
 app.use(
   cors({
-    origin: "https://moneymanager-1-4fn4.onrender.com", // Frontend URL
+    origin: "https://moneymanager-1-4fn4.onrender.com",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allow all methods
-    allowedHeaders: ["Content-Type", "Authorization"], // Allow headers
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
@@ -29,9 +29,7 @@ app.use(cookieParser());
 app.options("*", cors());
 
 // MongoDB Atlas Connection
-const uri =
-  process.env.MONGO_URI ||
-  "mongodb+srv://sriramkomma2443:Lowda12345@mydb-cluster.46hwdk7.mongodb.net/?retryWrites=true&w=majority&appName=mydb-cluster";
+const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri);
 
 let db;
@@ -68,11 +66,11 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 if (!accountSid || !authToken || !twilioPhoneNumber) {
-  console.error("Missing Twilio environment variables");
-  process.exit(1);
+  console.error("Missing Twilio environment variables. QR payment will fail.");
+} else {
+  const twilioClient = twilio(accountSid, authToken);
+  // Move twilioClient here if needed globally, or define in /scan-payment
 }
-
-const twilioClient = new twilio(accountSid, authToken);
 
 // Authentication Middleware
 const verifyToken = (req, res, next) => {
@@ -177,7 +175,7 @@ app.post("/login", async (req, res) => {
 
     res.cookie("jwt_token", token, {
       httpOnly: true,
-      secure: true, // Always true for HTTPS
+      secure: true,
       sameSite: "lax",
     });
     console.log("Login successful for:", email);
@@ -359,6 +357,13 @@ app.post("/scan-payment", verifyToken, async (req, res) => {
     console.log("Validation failed: Invalid amount");
     return res.status(400).json({ error: "Invalid amount provided" });
   }
+
+  if (!accountSid || !authToken || !twilioPhoneNumber) {
+    console.error("Twilio not configured. Skipping SMS.");
+    return res.status(500).json({ error: "Twilio configuration missing" });
+  }
+
+  const twilioClient = twilio(accountSid, authToken);
 
   try {
     const urlParams = new URLSearchParams(qrData);
