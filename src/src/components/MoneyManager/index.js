@@ -10,7 +10,6 @@ import QrScanner from "qr-scanner";
 import TransactionItem from "../TransactionItem";
 import MoneyDetails from "../MoneyDetails";
 import "./index.css";
-import Cookies from "js-cookie"; // Add this import for cookie handling
 
 const transactionTypeOptions = [
   { optionId: "INCOME", displayText: "Income" },
@@ -48,12 +47,16 @@ class MoneyManager extends Component {
   }
 
   fetchTransactions = () => {
-    console.log(`${process.env.REACT_APP_API_URL}/transaction`);
+    console.log(
+      "Fetching transactions from:",
+      `${process.env.REACT_APP_API_URL}/transaction`
+    );
     axios
       .get(`${process.env.REACT_APP_API_URL}/transaction`, {
         withCredentials: true,
       })
       .then((response) => {
+        console.log("Transactions fetched:", response.data);
         this.setState({ transactionsList: response.data });
       })
       .catch((error) => {
@@ -90,27 +93,22 @@ class MoneyManager extends Component {
       try {
         const response = await axios.post(
           `${process.env.REACT_APP_API_URL}/scan-payment`,
-          {
-            qrData: result.data,
-            amount: parseInt(amount),
-            recipientPhone,
-          },
+          { qrData: result.data, amount: parseInt(amount), recipientPhone },
           { withCredentials: true }
         );
-
-        if (response.status === 200) {
-          console.log("Payment request sent:", response.data);
-          this.setState({ upiLink: response.data.upiLink });
-          this.fetchTransactions();
-          alert("Payment request processed successfully!");
-        } else {
-          const errorData = response.data;
-          console.error("Failed to send payment request:", errorData);
-          alert(`Failed to process payment: ${errorData.error}`);
-        }
+        console.log("Payment request sent:", response.data);
+        this.fetchTransactions();
+        alert("Payment request processed successfully!");
       } catch (error) {
-        console.error("Error sending payment request:", error);
-        alert(`Error processing payment: ${error.message}`);
+        console.error(
+          "Error sending payment request:",
+          error.response?.data || error.message
+        );
+        alert(
+          `Error processing payment: ${
+            error.response?.data?.error || error.message
+          }`
+        );
       }
     }
   };
@@ -197,15 +195,18 @@ class MoneyManager extends Component {
       (eachTransaction) => eachTransaction.optionId === optionId
     );
     const { displayText } = typeOption;
+    const userId = JSON.parse(localStorage.getItem("user"))?.userId;
+
+    if (!userId) {
+      console.error("User ID not found! Please log in.");
+      alert("Please log in to add a transaction.");
+      return;
+    }
 
     axios
       .post(
         `${process.env.REACT_APP_API_URL}/transaction`,
-        {
-          title: titleInput,
-          amount: parseInt(amountInput),
-          type: displayText,
-        },
+        { title: titleInput, amount: parseInt(amountInput), type: displayText },
         { withCredentials: true }
       )
       .then(() => {
@@ -257,7 +258,7 @@ class MoneyManager extends Component {
         { withCredentials: true }
       )
       .then(() => {
-        Cookies.remove("jwt_token"); // Clear cookie
+        localStorage.removeItem("user");
         this.props.history.push("/login");
       })
       .catch((error) => {
@@ -281,8 +282,9 @@ class MoneyManager extends Component {
 
     return (
       <div
-        className={`money-manager-container ${isNightMode ? "night-mode" : ""}`}
-      >
+        className={`money-manager-container ${
+          isNightMode ? "night-mode" : ""
+        }`}>
         <div className="money-manager-card">
           <div className="header-section">
             <div className="logo-container">
@@ -297,24 +299,10 @@ class MoneyManager extends Component {
               <FaCloudDownloadAlt
                 className="icon-btn"
                 onClick={() => {
-                  axios
-                    .get(`${process.env.REACT_APP_API_URL}/generate-pdf`, {
-                      withCredentials: true,
-                    })
-                    .then((response) => {
-                      const url = window.URL.createObjectURL(
-                        new Blob([response.data])
-                      );
-                      const link = document.createElement("a");
-                      link.href = url;
-                      link.setAttribute("download", "Transaction_Report.pdf");
-                      document.body.appendChild(link);
-                      link.click();
-                    })
-                    .catch((error) => {
-                      console.error("PDF download error:", error);
-                      alert("Failed to generate PDF. Please try again.");
-                    });
+                  window.open(
+                    `${process.env.REACT_APP_API_URL}/generate-pdf`,
+                    "_blank"
+                  );
                 }}
                 title="Download Report"
               />
@@ -394,8 +382,7 @@ class MoneyManager extends Component {
                 id="select"
                 className="input"
                 value={optionId}
-                onChange={this.onChangeOptionId}
-              >
+                onChange={this.onChangeOptionId}>
                 {transactionTypeOptions.map((eachOption) => (
                   <option key={eachOption.optionId} value={eachOption.optionId}>
                     {eachOption.displayText}

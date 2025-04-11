@@ -1,5 +1,5 @@
 import { Component } from "react";
-import axios from "axios"; // Add axios
+import axios from "axios";
 import { Redirect } from "react-router-dom";
 import "./index.css";
 
@@ -49,7 +49,7 @@ class Login extends Component {
 
     try {
       const response = await axios.post(url, userDetails, {
-        withCredentials: true, // Let backend set the cookie
+        withCredentials: true,
       });
       this.onSubmitSuccess(response.data);
     } catch (error) {
@@ -101,7 +101,7 @@ class Login extends Component {
 
   render() {
     const { showSubmitError, errorMsg } = this.state;
-    const jwtToken = localStorage.getItem("user"); // Check login state
+    const jwtToken = localStorage.getItem("user");
     if (jwtToken) {
       return <Redirect to="/" />;
     }
