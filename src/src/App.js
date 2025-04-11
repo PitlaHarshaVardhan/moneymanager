@@ -8,18 +8,18 @@ import Payment from "./components/Payment"; // Assuming you have or will create 
 
 import "./App.css";
 
-const App = () => (
-  <BrowserRouter>
-    <Switch>
-      <Route exact path="/login" component={Login} />
-      <Route exact path="/register" component={Register} />
-      <ProtectedRoute exact path="/" component={MoneyManager} />
-      <ProtectedRoute exact path="/payment/:data" component={Payment} />{" "}
-      {/* Added */}
-      <Route path="*" render={() => <Redirect to="/login" />} />{" "}
-      {/* Fallback */}
-    </Switch>
-  </BrowserRouter>
-);
+// const App = () => (
+//   <BrowserRouter>
+//     <Switch>
+//       <Route exact path="/login" component={Login} />
+//       <Route exact path="/register" component={Register} />
+//       <ProtectedRoute exact path="/" component={MoneyManager} />
+//       <ProtectedRoute exact path="/payment/:data" component={Payment} />
+//       <Route path="*" render={() => <Redirect to="/login" />} />
+//     </Switch>
+//   </BrowserRouter>
+// );
+
+const App = () => <Register />;
 
 export default App;
