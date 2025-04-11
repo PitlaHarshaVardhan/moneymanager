@@ -1,5 +1,5 @@
 import { Component } from "react";
-import Cookies from "js-cookie";
+import axios from "axios"; // Add axios
 import { Redirect } from "react-router-dom";
 import "./index.css";
 
@@ -21,7 +21,6 @@ class Login extends Component {
 
   onSubmitSuccess = (data) => {
     const { history } = this.props;
-    Cookies.set("jwt_token", data.token, { expires: 30, path: "/" });
     localStorage.setItem("user", JSON.stringify({ userId: data.userId }));
     history.replace("/");
   };
@@ -47,24 +46,16 @@ class Login extends Component {
 
     const userDetails = { email, password };
     const url = `${process.env.REACT_APP_API_URL}/login`;
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userDetails),
-    };
 
     try {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      if (response.ok) {
-        this.onSubmitSuccess(data);
-      } else {
-        this.onSubmitFailure(data.error || "Invalid credentials");
-      }
+      const response = await axios.post(url, userDetails, {
+        withCredentials: true, // Let backend set the cookie
+      });
+      this.onSubmitSuccess(response.data);
     } catch (error) {
-      this.onSubmitFailure("Network error. Please try again.");
+      this.onSubmitFailure(
+        error.response?.data?.error || "Network error. Please try again."
+      );
     }
   };
 
@@ -110,8 +101,8 @@ class Login extends Component {
 
   render() {
     const { showSubmitError, errorMsg } = this.state;
-    const jwtToken = Cookies.get("jwt_token");
-    if (jwtToken !== undefined) {
+    const jwtToken = localStorage.getItem("user"); // Check login state
+    if (jwtToken) {
       return <Redirect to="/" />;
     }
     return (
@@ -119,7 +110,7 @@ class Login extends Component {
         <div className="login-card">
           <div className="logo-container">
             <img
-              src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png" // Money manager icon
+              src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png"
               className="logo-image"
               alt="money manager logo"
             />

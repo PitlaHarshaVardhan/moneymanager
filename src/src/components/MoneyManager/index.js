@@ -5,7 +5,6 @@ import { IoIosLogOut } from "react-icons/io";
 import { FaCloudDownloadAlt } from "react-icons/fa";
 import { FaMoon, FaSun } from "react-icons/fa";
 import { withRouter } from "react-router-dom";
-import Cookies from "js-cookie";
 import axios from "axios";
 import QrScanner from "qr-scanner";
 import TransactionItem from "../TransactionItem";
@@ -56,7 +55,10 @@ class MoneyManager extends Component {
         this.setState({ transactionsList: response.data });
       })
       .catch((error) => {
-        console.error("Error fetching transactions:", error);
+        console.error(
+          "Fetch transactions error:",
+          error.response?.data || error.message
+        );
         alert("Failed to fetch transactions. Please try again.");
       });
   };
@@ -112,8 +114,8 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error(
-          "Error deleting transaction:",
-          error.response?.data?.message || error.message
+          "Delete transaction error:",
+          error.response?.data || error.message
         );
         alert("Failed to delete transaction. Please try again.");
       });
@@ -129,8 +131,8 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error(
-          "Error clearing transactions:",
-          error.response?.data?.message || error.message
+          "Clear transactions error:",
+          error.response?.data || error.message
         );
         alert("Failed to clear transactions. Please try again.");
       });
@@ -147,7 +149,10 @@ class MoneyManager extends Component {
         this.fetchTransactions();
       })
       .catch((error) => {
-        console.error("Error updating transaction:", error);
+        console.error(
+          "Update transaction error:",
+          error.response?.data || error.message
+        );
         alert("Failed to update transaction. Please try again.");
       });
   };
@@ -187,7 +192,10 @@ class MoneyManager extends Component {
         });
       })
       .catch((error) => {
-        console.error("Error adding transaction:", error);
+        console.error(
+          "Add transaction error:",
+          error.response?.data || error.message
+        );
         alert("Failed to add transaction. Please try again.");
       });
   };
@@ -224,11 +232,11 @@ class MoneyManager extends Component {
         { withCredentials: true }
       )
       .then(() => {
-        Cookies.remove("jwt_token");
-        window.location.href = "/login";
+        localStorage.removeItem("user"); // Clear user data
+        this.props.history.push("/login"); // Use history instead of window.location
       })
       .catch((error) => {
-        console.error("Logout failed", error);
+        console.error("Logout error:", error.response?.data || error.message);
         alert("Logout failed. Please try again.");
       });
   };
