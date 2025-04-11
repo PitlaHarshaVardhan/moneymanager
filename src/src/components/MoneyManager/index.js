@@ -47,6 +47,7 @@ class MoneyManager extends Component {
   }
 
   fetchTransactions = () => {
+    console.log(`${process.env.REACT_APP_API_URL}/transaction/`);
     axios
       .get(`${process.env.REACT_APP_API_URL}/transaction`, {
         withCredentials: true,
