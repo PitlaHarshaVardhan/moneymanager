@@ -46,7 +46,7 @@ class Login extends Component {
 
     const userDetails = { email, password };
     const url = `${process.env.REACT_APP_API_URL}/login`;
-
+    console.log(url);
     try {
       const response = await axios.post(url, userDetails, {
         withCredentials: true,

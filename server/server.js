@@ -146,7 +146,8 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   console.log("Login request received:", req.body);
   const { email, password } = req.body;
-
+  console.log(email);
+  console.log(password);
   if (!email || !password) {
     console.log("Validation failed: Missing fields");
     return res.status(400).json({ error: "Email and password are required" });

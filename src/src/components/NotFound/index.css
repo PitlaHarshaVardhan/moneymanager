@@ -1,0 +1,40 @@
+/* index.css */
+
+/* Base styles for the not-found container */
+.not-found-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full viewport height */
+  background-color: #f4f4f4; /* Light background for contrast */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Styles for the image */
+.not-found-img {
+  max-width: 100%; /* Ensure the image is responsive */
+  height: auto; /* Maintain aspect ratio */
+  max-height: 400px; /* Optional: Set a max height to prevent it from growing too large */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .not-found-container {
+    padding: 15px;
+  }
+
+  .not-found-img {
+    max-height: 300px; /* Reduce max height on smaller screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .not-found-container {
+    padding: 10px;
+  }
+
+  .not-found-img {
+    max-height: 250px; /* Further reduce the size on very small screens */
+  }
+}
