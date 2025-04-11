@@ -5,12 +5,12 @@ import { IoIosLogOut } from "react-icons/io";
 import { FaCloudDownloadAlt } from "react-icons/fa";
 import { FaMoon, FaSun } from "react-icons/fa";
 import { withRouter } from "react-router-dom";
-import Cookies from "js-cookie";
 import axios from "axios";
 import QrScanner from "qr-scanner";
 import TransactionItem from "../TransactionItem";
 import MoneyDetails from "../MoneyDetails";
 import "./index.css";
+import Cookies from "js-cookie"; // Add this import for cookie handling
 
 const transactionTypeOptions = [
   { optionId: "INCOME", displayText: "Income" },
@@ -48,6 +48,7 @@ class MoneyManager extends Component {
   }
 
   fetchTransactions = () => {
+    console.log(`${process.env.REACT_APP_API_URL}/transaction`);
     axios
       .get(`${process.env.REACT_APP_API_URL}/transaction`, {
         withCredentials: true,
@@ -56,7 +57,10 @@ class MoneyManager extends Component {
         this.setState({ transactionsList: response.data });
       })
       .catch((error) => {
-        console.error("Error fetching transactions:", error);
+        console.error(
+          "Fetch transactions error:",
+          error.response?.data || error.message
+        );
         alert("Failed to fetch transactions. Please try again.");
       });
   };
@@ -77,43 +81,30 @@ class MoneyManager extends Component {
     if (result.data) {
       console.log("Scanned QR Code Data:", result.data);
       const amount = prompt("Enter payment amount in INR:");
-      if (!amount || isNaN(amount)) {
-        alert("Please enter a valid amount");
-        return;
-      }
-
-      const token = localStorage.getItem("token") || Cookies.get("jwt_token");
-      if (!token) {
-        console.error("No token available for scan");
-        this.checkAuth();
+      const recipientPhone = prompt("Enter recipient phone number:");
+      if (!amount || isNaN(amount) || !recipientPhone) {
+        alert("Please enter a valid amount and recipient phone number");
         return;
       }
 
       try {
-        const response = await fetch(
-          "https://moneymanager-1-4fn4.onrender.com/scan-payment",
+        const response = await axios.post(
+          `${process.env.REACT_APP_API_URL}/scan-payment`,
           {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              qrData: result.data,
-              amount: parseInt(amount),
-            }),
-          }
+            qrData: result.data,
+            amount: parseInt(amount),
+            recipientPhone,
+          },
+          { withCredentials: true }
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Payment request sent:", data);
-          this.setState({ upiLink: data.upiLink });
+        if (response.status === 200) {
+          console.log("Payment request sent:", response.data);
+          this.setState({ upiLink: response.data.upiLink });
           this.fetchTransactions();
           alert("Payment request processed successfully!");
         } else {
-          const errorData = await response.json();
+          const errorData = response.data;
           console.error("Failed to send payment request:", errorData);
           alert(`Failed to process payment: ${errorData.error}`);
         }
@@ -156,8 +147,8 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error(
-          "Error deleting transaction:",
-          error.response?.data?.message || error.message
+          "Delete transaction error:",
+          error.response?.data || error.message
         );
         alert("Failed to delete transaction. Please try again.");
       });
@@ -173,8 +164,8 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error(
-          "Error clearing transactions:",
-          error.response?.data?.message || error.message
+          "Clear transactions error:",
+          error.response?.data || error.message
         );
         alert("Failed to clear transactions. Please try again.");
       });
@@ -191,7 +182,10 @@ class MoneyManager extends Component {
         this.fetchTransactions();
       })
       .catch((error) => {
-        console.error("Error updating transaction:", error);
+        console.error(
+          "Update transaction error:",
+          error.response?.data || error.message
+        );
         alert("Failed to update transaction. Please try again.");
       });
   };
@@ -203,13 +197,6 @@ class MoneyManager extends Component {
       (eachTransaction) => eachTransaction.optionId === optionId
     );
     const { displayText } = typeOption;
-    const userId = JSON.parse(localStorage.getItem("user"))?.userId;
-
-    if (!userId) {
-      console.error("User ID not found! Ensure the user is logged in.");
-      alert("Please log in to add a transaction.");
-      return;
-    }
 
     axios
       .post(
@@ -218,7 +205,6 @@ class MoneyManager extends Component {
           title: titleInput,
           amount: parseInt(amountInput),
           type: displayText,
-          userId: userId,
         },
         { withCredentials: true }
       )
@@ -231,7 +217,10 @@ class MoneyManager extends Component {
         });
       })
       .catch((error) => {
-        console.error("Error adding transaction:", error);
+        console.error(
+          "Add transaction error:",
+          error.response?.data || error.message
+        );
         alert("Failed to add transaction. Please try again.");
       });
   };
@@ -268,11 +257,11 @@ class MoneyManager extends Component {
         { withCredentials: true }
       )
       .then(() => {
-        Cookies.remove("jwt_token");
-        window.location.href = "/login";
+        Cookies.remove("jwt_token"); // Clear cookie
+        this.props.history.push("/login");
       })
       .catch((error) => {
-        console.error("Logout failed", error);
+        console.error("Logout error:", error.response?.data || error.message);
         alert("Logout failed. Please try again.");
       });
   };
@@ -307,12 +296,26 @@ class MoneyManager extends Component {
             <div className="action-buttons">
               <FaCloudDownloadAlt
                 className="icon-btn"
-                onClick={() =>
-                  window.open(
-                    `${process.env.REACT_APP_API_URL}/generate-pdf`,
-                    "_blank"
-                  )
-                }
+                onClick={() => {
+                  axios
+                    .get(`${process.env.REACT_APP_API_URL}/generate-pdf`, {
+                      withCredentials: true,
+                    })
+                    .then((response) => {
+                      const url = window.URL.createObjectURL(
+                        new Blob([response.data])
+                      );
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.setAttribute("download", "Transaction_Report.pdf");
+                      document.body.appendChild(link);
+                      link.click();
+                    })
+                    .catch((error) => {
+                      console.error("PDF download error:", error);
+                      alert("Failed to generate PDF. Please try again.");
+                    });
+                }}
                 title="Download Report"
               />
               <MdDeleteForever

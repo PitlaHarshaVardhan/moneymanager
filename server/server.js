@@ -11,14 +11,12 @@ const fs = require("fs");
 const twilio = require("twilio");
 
 const app = express();
-
-// Use the PORT environment variable provided by Render, default to 3001 for local development
 const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(
   cors({
-    origin: "https://moneymanager-1-4fn4.onrender.com", // Replace with your actual deployed frontend URL
+    origin: "https://moneymanager-1-4fn4.onrender.com", // Match frontend URL without trailing slash
     credentials: true,
   })
 );
@@ -59,7 +57,7 @@ async function connectDB() {
 }
 connectDB();
 
-// Twilio Configuration (Use environment variables only)
+// Twilio Configuration
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -88,7 +86,13 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Basic root route for testing
+// Test Route
+app.get("/test", (req, res) => {
+  console.log("Test route hit!");
+  res.send("Test route working!");
+});
+
+// Basic Root Route
 app.get("/", (req, res) => {
   console.log("Received GET request to root route.");
   res.status(200).send("Server is running!");
@@ -215,6 +219,21 @@ app.get("/transaction", verifyToken, async (req, res) => {
   }
 });
 
+app.get("/transactions", verifyToken, async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    console.log("Fetching transactions for user (plural):", userId);
+    const transactionsCollection = db.collection("transaction");
+    const transactions = await transactionsCollection
+      .find({ userId })
+      .toArray();
+    res.json(transactions);
+  } catch (err) {
+    console.error("Error fetching transactions (plural):", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Create Transaction
 app.post("/transaction", verifyToken, async (req, res) => {
   console.log("Transaction request received:", req.body);
@@ -243,6 +262,37 @@ app.post("/transaction", verifyToken, async (req, res) => {
     res.json({ message: "Transaction added successfully", transactionId });
   } catch (err) {
     console.error("Error inserting transaction:", err.message);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.post("/transactions", verifyToken, async (req, res) => {
+  console.log("Transactions (plural) request received:", req.body);
+  const { title, amount, type } = req.body;
+  const userId = req.user.userId;
+
+  if (!title || !amount || !type) {
+    console.log("Validation failed: Missing fields");
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const transactionId = uuidv4();
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  try {
+    const transactionsCollection = db.collection("transaction");
+    const result = await transactionsCollection.insertOne({
+      transactionId,
+      title,
+      amount: parseInt(amount),
+      type,
+      date: currentDate,
+      userId,
+    });
+    console.log("Transaction inserted successfully (plural):", transactionId);
+    res.json({ message: "Transaction added successfully", transactionId });
+  } catch (err) {
+    console.error("Error inserting transaction (plural):", err.message);
     res.status(500).json({ error: "Database error" });
   }
 });
@@ -338,7 +388,7 @@ app.put("/transaction/:id", verifyToken, async (req, res) => {
 
 // QR Scan Payment
 app.post("/scan-payment", verifyToken, async (req, res) => {
-  const { qrData, amount, recipientPhone } = req.body; // Allow dynamic recipient phone
+  const { qrData, amount, recipientPhone } = req.body;
   const userId = req.user.userId;
 
   if (!qrData || !amount || !recipientPhone) {
@@ -522,10 +572,15 @@ async function startServer() {
   console.log("Starting server...");
   try {
     await connectDB(); // Wait for DB connection
-    app.listen(port, "0.0.0.0", () => {
-      console.log(`Server running on port ${port}`);
-      console.log("Server is listening on all interfaces (0.0.0.0)");
-    });
+    app
+      .listen(port, "0.0.0.0", () => {
+        console.log(`Server running on port ${port}`);
+        console.log("Server is listening on all interfaces (0.0.0.0)");
+      })
+      .on("error", (err) => {
+        console.error("Server failed to start:", err.message);
+        process.exit(1);
+      });
   } catch (err) {
     console.error("Error during server startup:", err.message);
     process.exit(1);
