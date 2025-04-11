@@ -29,9 +29,19 @@ class MoneyManager extends Component {
     isScannerActive: false,
     scannerData: null,
     isNightMode: false,
+    isLoading: false,
   };
 
   componentDidMount() {
+    console.log("MoneyManager mounted, checking token...");
+    const token = Cookies.get("jwt_token");
+    console.log("Token found:", !!token);
+    if (!token) {
+      console.log("No token, redirecting to login");
+      this.props.history.push("/login");
+      return;
+    }
+    console.log("Fetching transactions...");
     this.fetchTransactions();
   }
 
@@ -48,16 +58,25 @@ class MoneyManager extends Component {
   }
 
   fetchTransactions = () => {
+    this.setState({ isLoading: true });
     axios
       .get(`${process.env.REACT_APP_API_URL}/transaction`, {
         withCredentials: true,
       })
       .then((response) => {
-        this.setState({ transactionsList: response.data });
+        this.setState({ transactionsList: response.data, isLoading: false });
       })
       .catch((error) => {
         console.error("Error fetching transactions:", error);
-        alert("Failed to fetch transactions. Please try again.");
+        this.setState({ isLoading: false });
+        if (error.response?.status === 401) {
+          Cookies.remove("jwt_token");
+          localStorage.removeItem("user");
+          this.props.history.push("/login");
+          alert("Session expired. Please log in again.");
+        } else {
+          alert("Failed to fetch transactions. Please try again.");
+        }
       });
   };
 
@@ -82,10 +101,11 @@ class MoneyManager extends Component {
         return;
       }
 
-      const token = localStorage.getItem("token") || Cookies.get("jwt_token");
+      const token = Cookies.get("jwt_token");
       if (!token) {
         console.error("No token available for scan");
-        this.checkAuth();
+        alert("Please log in to proceed.");
+        this.props.history.push("/login");
         return;
       }
 
@@ -159,7 +179,14 @@ class MoneyManager extends Component {
           "Error deleting transaction:",
           error.response?.data?.message || error.message
         );
-        alert("Failed to delete transaction. Please try again.");
+        if (error.response?.status === 401) {
+          Cookies.remove("jwt_token");
+          localStorage.removeItem("user");
+          this.props.history.push("/login");
+          alert("Session expired. Please log in again.");
+        } else {
+          alert("Failed to delete transaction. Please try again.");
+        }
       });
   };
 
@@ -176,7 +203,14 @@ class MoneyManager extends Component {
           "Error clearing transactions:",
           error.response?.data?.message || error.message
         );
-        alert("Failed to clear transactions. Please try again.");
+        if (error.response?.status === 401) {
+          Cookies.remove("jwt_token");
+          localStorage.removeItem("user");
+          this.props.history.push("/login");
+          alert("Session expired. Please log in again.");
+        } else {
+          alert("Failed to clear transactions. Please try again.");
+        }
       });
   };
 
@@ -192,7 +226,14 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error("Error updating transaction:", error);
-        alert("Failed to update transaction. Please try again.");
+        if (error.response?.status === 401) {
+          Cookies.remove("jwt_token");
+          localStorage.removeItem("user");
+          this.props.history.push("/login");
+          alert("Session expired. Please log in again.");
+        } else {
+          alert("Failed to update transaction. Please try again.");
+        }
       });
   };
 
@@ -208,6 +249,7 @@ class MoneyManager extends Component {
     if (!userId) {
       console.error("User ID not found! Ensure the user is logged in.");
       alert("Please log in to add a transaction.");
+      this.props.history.push("/login");
       return;
     }
 
@@ -232,7 +274,14 @@ class MoneyManager extends Component {
       })
       .catch((error) => {
         console.error("Error adding transaction:", error);
-        alert("Failed to add transaction. Please try again.");
+        if (error.response?.status === 401) {
+          Cookies.remove("jwt_token");
+          localStorage.removeItem("user");
+          this.props.history.push("/login");
+          alert("Session expired. Please log in again.");
+        } else {
+          alert("Failed to add transaction. Please try again.");
+        }
       });
   };
 
@@ -269,7 +318,8 @@ class MoneyManager extends Component {
       )
       .then(() => {
         Cookies.remove("jwt_token");
-        window.location.href = "/login";
+        localStorage.removeItem("user");
+        this.props.history.push("/login");
       })
       .catch((error) => {
         console.error("Logout failed", error);
@@ -285,6 +335,7 @@ class MoneyManager extends Component {
       transactionsList,
       isScannerActive,
       isNightMode,
+      isLoading,
     } = this.state;
     const balanceAmount = this.getBalance();
     const incomeAmount = this.getIncome();
@@ -292,147 +343,155 @@ class MoneyManager extends Component {
 
     return (
       <div
-        className={`money-manager-container ${isNightMode ? "night-mode" : ""}`}
-      >
-        <div className="money-manager-card">
-          <div className="header-section">
-            <div className="logo-container">
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png"
-                className="logo-image"
-                alt="money manager logo"
-              />
-              <h1 className="app-title">Money Manager</h1>
-            </div>
-            <div className="action-buttons">
-              <FaCloudDownloadAlt
-                className="icon-btn"
-                onClick={() =>
-                  window.open(
-                    `${process.env.REACT_APP_API_URL}/generate-pdf`,
-                    "_blank"
-                  )
-                }
-                title="Download Report"
-              />
-              <MdDeleteForever
-                className="icon-btn"
-                onClick={this.clearAllTransactions}
-                title="Clear All"
-              />
-              <IoIosQrScanner
-                className="icon-btn"
-                onClick={this.toggleScanner}
-                title={isScannerActive ? "Close Scanner" : "Open Scanner"}
-              />
-              <IoIosLogOut
-                className="icon-btn"
-                onClick={this.logout}
-                title="Logout"
-              />
-              {isNightMode ? (
-                <FaSun
-                  className="icon-btn"
-                  onClick={this.toggleNightMode}
-                  title="Switch to Light Mode"
+        className={`money-manager-container ${
+          isNightMode ? "night-mode" : ""
+        }`}>
+        {isLoading ? (
+          <div className="loading">Loading transactions...</div>
+        ) : (
+          <div className="money-manager-card">
+            <div className="header-section">
+              <div className="logo-container">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png"
+                  className="logo-image"
+                  alt="money manager logo"
                 />
-              ) : (
-                <FaMoon
-                  className="icon-btn"
-                  onClick={this.toggleNightMode}
-                  title="Switch to Night Mode"
-                />
-              )}
-            </div>
-          </div>
-
-          <div className="welcome-text">
-            <h2 className="greeting">Hi, Bachelors!</h2>
-            <p className="welcome-subtext">
-              Welcome back to your{" "}
-              <span className="money-manager-text">Money Manager</span>
-            </p>
-          </div>
-
-          <MoneyDetails
-            balanceAmount={balanceAmount}
-            incomeAmount={incomeAmount}
-            expensesAmount={expensesAmount}
-          />
-          <div className="transaction-details">
-            <form className="transaction-form" onSubmit={this.onAddTransaction}>
-              <h1 className="transaction-header">Add Transaction</h1>
-              <label className="input-label" htmlFor="title">
-                TITLE
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={titleInput}
-                onChange={this.onChangeTitleInput}
-                className="input"
-                placeholder="TITLE"
-              />
-              <label className="input-label" htmlFor="amount">
-                AMOUNT
-              </label>
-              <input
-                type="text"
-                id="amount"
-                className="input"
-                value={amountInput}
-                onChange={this.onChangeAmountInput}
-                placeholder="AMOUNT"
-              />
-              <label className="input-label" htmlFor="select">
-                TYPE
-              </label>
-              <select
-                id="select"
-                className="input"
-                value={optionId}
-                onChange={this.onChangeOptionId}
-              >
-                {transactionTypeOptions.map((eachOption) => (
-                  <option key={eachOption.optionId} value={eachOption.optionId}>
-                    {eachOption.displayText}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="buttons">
-                Add
-              </button>
-            </form>
-
-            {isScannerActive && (
-              <div className="scanner-container">
-                <video id="scanner-video" className="scanner" />
+                <h1 className="app-title">Money Manager</h1>
               </div>
-            )}
+              <div className="action-buttons">
+                <FaCloudDownloadAlt
+                  className="icon-btn"
+                  onClick={() =>
+                    window.open(
+                      `${process.env.REACT_APP_API_URL}/generate-pdf`,
+                      "_blank"
+                    )
+                  }
+                  title="Download Report"
+                />
+                <MdDeleteForever
+                  className="icon-btn"
+                  onClick={this.clearAllTransactions}
+                  title="Clear All"
+                />
+                <IoIosQrScanner
+                  className="icon-btn"
+                  onClick={this.toggleScanner}
+                  title={isScannerActive ? "Close Scanner" : "Open Scanner"}
+                />
+                <IoIosLogOut
+                  className="icon-btn"
+                  onClick={this.logout}
+                  title="Logout"
+                />
+                {isNightMode ? (
+                  <FaSun
+                    className="icon-btn"
+                    onClick={this.toggleNightMode}
+                    title="Switch to Light Mode"
+                  />
+                ) : (
+                  <FaMoon
+                    className="icon-btn"
+                    onClick={this.toggleNightMode}
+                    title="Switch to Night Mode"
+                  />
+                )}
+              </div>
+            </div>
 
-            <div className="history-transactions">
-              <h1 className="transaction-header">History</h1>
-              <div className="transactions-table-container">
-                <ul className="transactions-table">
-                  <li className="table-header">
-                    <p className="table-header-cell">Title</p>
-                    <p className="table-header-cell">Amount</p>
-                    <p className="table-header-cell">Type</p>
-                    <p className="table-header-cell">Date</p>
-                  </li>
-                  {transactionsList.map((eachTransaction) => (
-                    <TransactionItem
-                      key={eachTransaction.transactionId}
-                      transactionDetails={eachTransaction}
-                      deleteTransaction={this.deleteTransaction}
-                      updateTransaction={this.updateTransaction}
-                    />
+            <div className="welcome-text">
+              <h2 className="greeting">Hi, Bachelors!</h2>
+              <p className="welcome-subtext">
+                Welcome back to your{" "}
+                <span className="money-manager-text">Money Manager</span>
+              </p>
+            </div>
+
+            <MoneyDetails
+              balanceAmount={balanceAmount}
+              incomeAmount={incomeAmount}
+              expensesAmount={expensesAmount}
+            />
+            <div className="transaction-details">
+              <form
+                className="transaction-form"
+                onSubmit={this.onAddTransaction}>
+                <h1 className="transaction-header">Add Transaction</h1>
+                <label className="input-label" htmlFor="title">
+                  TITLE
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={titleInput}
+                  onChange={this.onChangeTitleInput}
+                  className="input"
+                  placeholder="TITLE"
+                />
+                <label className="input-label" htmlFor="amount">
+                  AMOUNT
+                </label>
+                <input
+                  type="text"
+                  id="amount"
+                  className="input"
+                  value={amountInput}
+                  onChange={this.onChangeAmountInput}
+                  placeholder="AMOUNT"
+                />
+                <label className="input-label" htmlFor="select">
+                  TYPE
+                </label>
+                <select
+                  id="select"
+                  className="input"
+                  value={optionId}
+                  onChange={this.onChangeOptionId}>
+                  {transactionTypeOptions.map((eachOption) => (
+                    <option
+                      key={eachOption.optionId}
+                      value={eachOption.optionId}>
+                      {eachOption.displayText}
+                    </option>
                   ))}
-                </ul>
+                </select>
+                <button type="submit" className="buttons">
+                  Add
+                </button>
+              </form>
+
+              {isScannerActive && (
+                <div className="scanner-container">
+                  <video id="scanner-video" className="scanner" />
+                </div>
+              )}
+
+              <div className="history-transactions">
+                <h1 className="transaction-header">History</h1>
+                <div className="transactions-table-container">
+                  <ul className="transactions-table">
+                    <li className="table-header">
+                      <p className="table-header-cell">Title</p>
+                      <p className="table-header-cell">Amount</p>
+                      <p className="table-header-cell">Type</p>
+                      <p className="table-header-cell">Date</p>
+                    </li>
+                    {transactionsList.map((eachTransaction) => (
+                      <TransactionItem
+                        key={eachTransaction.transactionId}
+                        transactionDetails={eachTransaction}
+                        deleteTransaction={this.deleteTransaction}
+                        updateTransaction={this.updateTransaction}
+                      />
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }

@@ -119,7 +119,7 @@ class Login extends Component {
         <div className="login-card">
           <div className="logo-container">
             <img
-              src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png" // Money manager icon
+              src="https://cdn-icons-png.flaticon.com/512/2995/2995353.png"
               className="logo-image"
               alt="money manager logo"
             />
